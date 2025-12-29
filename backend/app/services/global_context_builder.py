@@ -124,11 +124,16 @@ class GlobalContextBuilder:
         """
         # Parse sections from structural analysis
         sections = []
+        max_slide_idx = len(slides) - 1  # Last valid slide index
         for sec_data in structural.get("sections", []):
+            # Clamp section boundaries to valid slide indices
+            start = max(0, min(sec_data.get("start_slide", 0), max_slide_idx))
+            end = max(0, min(sec_data.get("end_slide", 0), max_slide_idx))
+
             sections.append(Section(
                 title=sec_data.get("title", "Untitled Section"),
-                start_slide=sec_data.get("start_slide", 0),
-                end_slide=sec_data.get("end_slide", 0),
+                start_slide=start,
+                end_slide=end,
                 summary=sec_data.get("summary", ""),
                 key_concepts=sec_data.get("key_concepts", [])
             ))

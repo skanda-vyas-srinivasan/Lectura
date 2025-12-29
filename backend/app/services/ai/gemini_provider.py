@@ -299,17 +299,19 @@ Slides in section: {section_strategy['start_slide'] + 1} to {section_strategy['e
 
 **CRITICAL INSTRUCTIONS:**
 1. Write ONE CONTINUOUS NARRATION covering all {len(section_slides)} slides in this section
-2. Flow naturally from slide to slide as if lecturing live
-3. DO NOT treat each slide as a fresh start - maintain narrative continuity
-4. Use transitions like "Now let's", "Moving on", "Building on this" between slides
-5. Mark slide boundaries with "### SLIDE X ###" on its own line
-6. **MATCH NARRATION LENGTH TO CONTENT**:
+2. YOU MUST NARRATE EVERY SINGLE SLIDE - DO NOT STOP EARLY!
+3. Flow naturally from slide to slide as if lecturing live
+4. DO NOT treat each slide as a fresh start - maintain narrative continuity
+5. Use transitions like "Now let's", "Moving on", "Building on this" between slides
+6. Mark slide boundaries with "### SLIDE X ###" on its own line
+7. **IMPORTANT**: You MUST include ALL slides from {section_strategy['start_slide'] + 1} to {section_strategy['end_slide'] + 1}. Do not skip any!
+8. **MATCH NARRATION LENGTH TO CONTENT**:
    - Title slides: ~20-40 words (just welcome and state topic)
    - Outline slides: ~50-100 words (briefly list topics, don't elaborate)
    - Section headers: ~15-30 words (just transition: "Moving on to...")
    - Content slides: ~150-250 words (explain concepts in detail)
-7. **BE PROFESSIONAL AND CONCISE** - Don't add unnecessary fluff or embellishment
-8. **INCREMENTAL BUILDS**: If a slide is marked as "[INCREMENTAL BUILD]":
+9. **BE PROFESSIONAL AND CONCISE** - Don't add unnecessary fluff or embellishment
+10. **INCREMENTAL BUILDS**: If a slide is marked as "[INCREMENTAL BUILD]":
    - ONLY narrate the NEW content that just appeared
    - Keep it brief (~50-100 words)
    - DO NOT repeat content from the previous slide
@@ -411,15 +413,34 @@ Think: "How would I say this out loud to a student sitting across from me?"
 
 **CRITICAL: NO markdown (*bold*, `code`, **emphasis**), NO symbols (≤, ∈, ∀), NO technical notation - ONLY natural spoken English.**
 
+**FINAL REMINDER BEFORE YOU START:**
+You are narrating slides {section_strategy['start_slide'] + 1} through {section_strategy['end_slide'] + 1}.
+That's {len(section_slides)} slides total.
+YOU MUST GENERATE NARRATIONS FOR ALL {len(section_slides)} SLIDES.
+Start with "### SLIDE {section_strategy['start_slide'] + 1} ###" and end with "### SLIDE {section_strategy['end_slide'] + 1} ###".
+Do not stop early. Do not skip any slides.
+
 Begin narrating now:
 """
+
+        # Calculate required tokens dynamically based on section size
+        # Average: ~270 tokens per slide (200 words × 1.35 tokens/word)
+        # Add 50% buffer for transitions, safety, and prevent truncation
+        num_slides = len(section_slides)
+        estimated_tokens = int(num_slides * 270 * 1.5)
+
+        # Cap at Gemini's max output limit (8192 for gemini-2.0-flash)
+        # Use minimum of 1000 tokens for small sections
+        max_tokens = min(max(estimated_tokens, 1000), 8192)
+
+        print(f"      Token limit: {max_tokens} for {num_slides} slides (estimated: {estimated_tokens})")
 
         # Generate continuous narration
         response = self.model.generate_content(
             prompt,
             generation_config={
                 "temperature": 0.4,
-                "max_output_tokens": 4000,
+                "max_output_tokens": max_tokens,
             }
         )
 
@@ -431,6 +452,11 @@ Begin narrating now:
         # Parse response to extract individual slide narrations
         full_narration = response.text.strip()
 
+        # DEBUG: Show first 500 and last 500 chars of response
+        print(f"      📝 AI response length: {len(full_narration)} chars")
+        print(f"      First 200 chars: {full_narration[:200]}")
+        print(f"      Last 200 chars: ...{full_narration[-200:]}")
+
         # Split by slide markers
         import re
         slide_pattern = r'### SLIDE (\d+) ###\s*\n(.*?)(?=### SLIDE \d+ ###|$)'
@@ -438,9 +464,27 @@ Begin narrating now:
 
         # Build result dict
         narrations = {}
+        found_slide_numbers = []
         for slide_num_str, narration_text in matches:
             slide_idx = int(slide_num_str) - 1  # Convert to 0-indexed
             narrations[slide_idx] = narration_text.strip()
+            found_slide_numbers.append(int(slide_num_str))
+
+        print(f"      🔍 Found slide markers: {sorted(found_slide_numbers)}")
+
+        # Detect missing slides (warning if any slides weren't parsed)
+        expected_slide_indices = set(range(section_strategy['start_slide'], section_strategy['end_slide'] + 1))
+        parsed_slide_indices = set(narrations.keys())
+        missing_slides = expected_slide_indices - parsed_slide_indices
+
+        if missing_slides:
+            missing_list = sorted(list(missing_slides))
+            print(f"      ⚠️  WARNING: Missing {len(missing_slides)} slides from AI response: {missing_list}")
+            print(f"      Generated {len(narrations)}/{len(expected_slide_indices)} slides")
+
+            # If we're near the token limit, this is likely truncation
+            if max_tokens >= 8192:
+                print(f"      💡 TIP: Section too large ({num_slides} slides). Consider splitting into smaller sections.")
 
         return narrations
 
