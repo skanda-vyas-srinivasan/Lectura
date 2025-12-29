@@ -55,7 +55,9 @@ app = FastAPI(title="AI Lecturer API")
 # Allow both local development and production URLs
 allowed_origins = [
     "http://localhost:3000",  # Local development
-    "https://*.vercel.app",   # Vercel preview/production
+    "https://lectura-b14z.vercel.app",  # Vercel deployment
+    "https://lectura.ink",  # Custom domain
+    "http://lectura.ink",   # HTTP version
 ]
 
 # Add custom frontend URL from settings if set
