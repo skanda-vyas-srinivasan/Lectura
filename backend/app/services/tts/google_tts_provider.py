@@ -29,8 +29,16 @@ class GoogleTTSProvider:
             language_code: Language code (default: en-US)
             credentials_path: Path to service account JSON file
         """
-        # Load credentials from file
-        if credentials_path and Path(credentials_path).exists():
+        import json
+
+        # Try to load credentials from environment variable first (for deployment)
+        creds_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+        if creds_json:
+            creds_dict = json.loads(creds_json)
+            credentials = service_account.Credentials.from_service_account_info(creds_dict)
+            self.client = texttospeech.TextToSpeechClient(credentials=credentials)
+        # Then try file path (for local development)
+        elif credentials_path and Path(credentials_path).exists():
             credentials = service_account.Credentials.from_service_account_file(credentials_path)
             self.client = texttospeech.TextToSpeechClient(credentials=credentials)
         else:
