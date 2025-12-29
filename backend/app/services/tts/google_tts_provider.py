@@ -37,17 +37,26 @@ class GoogleTTSProvider:
         if creds_base64:
             creds_json = base64.b64decode(creds_base64).decode('utf-8')
             creds_dict = json.loads(creds_json)
-            credentials = service_account.Credentials.from_service_account_info(creds_dict)
+            credentials = service_account.Credentials.from_service_account_info(
+                creds_dict,
+                scopes=['https://www.googleapis.com/auth/cloud-platform']
+            )
             self.client = texttospeech.TextToSpeechClient(credentials=credentials)
         # Try regular JSON (legacy)
         elif os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON'):
             creds_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
             creds_dict = json.loads(creds_json)
-            credentials = service_account.Credentials.from_service_account_info(creds_dict)
+            credentials = service_account.Credentials.from_service_account_info(
+                creds_dict,
+                scopes=['https://www.googleapis.com/auth/cloud-platform']
+            )
             self.client = texttospeech.TextToSpeechClient(credentials=credentials)
         # Then try file path (for local development)
         elif credentials_path and Path(credentials_path).exists():
-            credentials = service_account.Credentials.from_service_account_file(credentials_path)
+            credentials = service_account.Credentials.from_service_account_file(
+                credentials_path,
+                scopes=['https://www.googleapis.com/auth/cloud-platform']
+            )
             self.client = texttospeech.TextToSpeechClient(credentials=credentials)
         else:
             # Try default credentials
