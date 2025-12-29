@@ -123,7 +123,7 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
         request: FastAPI request object (to get client IP)
         file: The PDF or PPTX file to process
         enable_vision: Whether to enable vision analysis for diagrams/tables (default: False)
-        tts_provider: TTS provider to use - "edge", "piper", or "google" (default: "edge")
+        tts_provider: TTS provider to use - "edge" (default), "piper", or "google" [WIP]
     """
     # Get client IP
     client_ip = request.client.host
@@ -339,10 +339,8 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
             from app.services.tts import PiperTTSProvider
             tts = PiperTTSProvider()
         elif tts_provider == "google":
-            tts = GoogleTTSProvider(
-                voice_name="en-US-Neural2-J",
-                credentials_path=settings.google_tts_credentials_path if settings.google_tts_credentials_path else None
-            )
+            # WIP: Google TTS auth not configured yet
+            raise ValueError("⚠️ Google TTS is WIP - authentication setup incomplete. Use 'edge' or 'piper' instead.")
         else:
             # Default to edge (free, no auth needed)
             from app.services.tts import EdgeTTSProvider
@@ -518,11 +516,8 @@ async def test_tts(text: str = "Hello, this is a test of the text to speech syst
             from app.services.tts import PiperTTSProvider
             tts = PiperTTSProvider()
         elif provider == "google":
-            from app.services.tts import GoogleTTSProvider
-            tts = GoogleTTSProvider(
-                voice_name="en-US-Neural2-J",
-                credentials_path=settings.google_tts_credentials_path if settings.google_tts_credentials_path else None
-            )
+            # WIP: Google TTS auth not configured yet
+            raise ValueError("⚠️ Google TTS is WIP - authentication setup incomplete. Use 'edge' or 'piper' instead.")
         else:
             # Default to edge (free, no auth needed)
             from app.services.tts import EdgeTTSProvider
