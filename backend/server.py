@@ -303,7 +303,14 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                     global_plan=global_plan_dict
                 )
                 all_narrations.update(section_narrations)
-                print(f"✅ Generated narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}")
+                actual_slides = sorted(section_narrations.keys())
+                expected_slides = list(range(section_strategy.start_slide, section_strategy.end_slide + 1))
+                missing_in_section = [s for s in expected_slides if s not in actual_slides]
+
+                if missing_in_section:
+                    print(f"⚠️  Section {section_strategy.start_slide}-{section_strategy.end_slide}: Got {len(actual_slides)}/{len(expected_slides)} slides, missing {missing_in_section}")
+                else:
+                    print(f"✅ Generated narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}")
             except Exception as e:
                 print(f"❌ Failed to generate narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}: {e}")
                 import traceback
