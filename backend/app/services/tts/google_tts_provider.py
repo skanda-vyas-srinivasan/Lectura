@@ -30,10 +30,18 @@ class GoogleTTSProvider:
             credentials_path: Path to service account JSON file
         """
         import json
+        import base64
 
-        # Try to load credentials from environment variable first (for deployment)
-        creds_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
-        if creds_json:
+        # Try base64 encoded credentials first (for deployment)
+        creds_base64 = os.getenv('GOOGLE_CREDENTIALS_BASE64')
+        if creds_base64:
+            creds_json = base64.b64decode(creds_base64).decode('utf-8')
+            creds_dict = json.loads(creds_json)
+            credentials = service_account.Credentials.from_service_account_info(creds_dict)
+            self.client = texttospeech.TextToSpeechClient(credentials=credentials)
+        # Try regular JSON (legacy)
+        elif os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON'):
+            creds_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
             creds_dict = json.loads(creds_json)
             credentials = service_account.Credentials.from_service_account_info(creds_dict)
             self.client = texttospeech.TextToSpeechClient(credentials=credentials)
