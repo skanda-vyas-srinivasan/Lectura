@@ -137,22 +137,42 @@ async def main():
     global_plan_dict = global_plan.model_dump()
 
     # Generate narrations section-by-section
-    # Helper function to process a single section (with chunking if needed)
-    async def process_section(start_slide, end_slide, section_title, section_strategy):
-        """Process a single section, handling chunking if needed."""
+    # Determine which sections contain the slides we want to narrate
+    all_narrations = {}
+    sections_to_generate = set()
+    for i in range(min(num_narrations, len(slides))):
+        section = global_plan.get_section_for_slide(i)
+        if section:
+            sections_to_generate.add((section.start_slide, section.end_slide, section.title))
+
+    print(f"   Generating {len(sections_to_generate)} section(s) sequentially\n")
+
+    # Process sections ONE AT A TIME (sequential, more reliable)
+    for start_slide, end_slide, section_title in sorted(sections_to_generate):
+        # Get section strategy
+        section_strategy = None
+        for strat in global_plan_dict['section_narration_strategies']:
+            if strat['start_slide'] == start_slide and strat['end_slide'] == end_slide:
+                section_strategy = strat
+                break
+
+        if not section_strategy:
+            print(f"   ⚠️  No strategy for section {section_title}, skipping")
+            continue
+
+        # Get slides for this section
         section_slides = slides[start_slide:end_slide + 1]
         num_section_slides = len(section_slides)
 
-        print(f"   📝 Section: {section_title} (slides {start_slide + 1}-{end_slide + 1}) - {num_section_slides} slides")
+        print(f"   Generating section: {section_title} (slides {start_slide + 1}-{end_slide + 1}) - {num_section_slides} slides")
 
         # For very large sections (>15 slides), split into chunks to avoid token limits
-        # 15 slides × 270 tokens × 1.5 buffer = 6075 tokens (well under 8192 limit)
         CHUNK_SIZE = 15
         if num_section_slides > CHUNK_SIZE:
-            print(f"      ⚠️  Large section - splitting into {(num_section_slides + CHUNK_SIZE - 1) // CHUNK_SIZE} chunks")
+            print(f"      ⚠️  Large section ({num_section_slides} slides) - splitting into chunks of {CHUNK_SIZE}")
+            section_narrations = {}
 
-            # Create all chunk tasks for parallel execution
-            chunk_tasks = []
+            # Process chunks SEQUENTIALLY
             for chunk_start in range(0, num_section_slides, CHUNK_SIZE):
                 chunk_end = min(chunk_start + CHUNK_SIZE, num_section_slides)
                 chunk_slides = section_slides[chunk_start:chunk_end]
@@ -166,24 +186,16 @@ async def main():
                     if chunk_strategy['start_slide'] <= s['slide_index'] <= chunk_strategy['end_slide']
                 ]
 
-                print(f"      Chunk {len(chunk_tasks) + 1}: slides {chunk_strategy['start_slide'] + 1}-{chunk_strategy['end_slide'] + 1}")
+                print(f"      Chunk {chunk_start//CHUNK_SIZE + 1}: slides {chunk_strategy['start_slide'] + 1}-{chunk_strategy['end_slide'] + 1}")
 
-                # Add chunk task
-                chunk_tasks.append(
-                    gemini_provider.generate_section_narrations(
-                        section_slides=chunk_slides,
-                        section_strategy=chunk_strategy,
-                        global_plan=global_plan_dict
-                    )
+                # Generate narrations for this chunk
+                chunk_narrations = await gemini_provider.generate_section_narrations(
+                    section_slides=chunk_slides,
+                    section_strategy=chunk_strategy,
+                    global_plan=global_plan_dict
                 )
 
-            # Execute all chunks in parallel
-            chunk_results = await asyncio.gather(*chunk_tasks)
-
-            # Merge chunk results
-            section_narrations = {}
-            for chunk_result in chunk_results:
-                section_narrations.update(chunk_result)
+                section_narrations.update(chunk_narrations)
         else:
             # Generate ALL narrations for this section in ONE call
             section_narrations = await gemini_provider.generate_section_narrations(
@@ -192,48 +204,14 @@ async def main():
                 global_plan=global_plan_dict
             )
 
+        # Add to results
+        all_narrations.update(section_narrations)
+
         # Show what was generated
         for slide_idx in sorted(section_narrations.keys()):
             if slide_idx < num_narrations:  # Only show requested slides
                 word_count = len(section_narrations[slide_idx].split())
-                print(f"      ✅ Slide {slide_idx + 1}: {word_count} words")
-
-        return section_narrations
-
-    # Determine which sections contain the slides we want to narrate
-    sections_to_generate = set()
-    for i in range(min(num_narrations, len(slides))):
-        section = global_plan.get_section_for_slide(i)
-        if section:
-            sections_to_generate.add((section.start_slide, section.end_slide, section.title))
-
-    print(f"   🚀 Generating {len(sections_to_generate)} section(s) IN PARALLEL\n")
-
-    # Build tasks for all sections
-    section_tasks = []
-    for start_slide, end_slide, section_title in sorted(sections_to_generate):
-        # Get section strategy
-        section_strategy = None
-        for strat in global_plan_dict['section_narration_strategies']:
-            if strat['start_slide'] == start_slide and strat['end_slide'] == end_slide:
-                section_strategy = strat
-                break
-
-        if not section_strategy:
-            print(f"   ⚠️  No strategy for section {section_title}, skipping")
-            continue
-
-        # Add section task
-        section_tasks.append(process_section(start_slide, end_slide, section_title, section_strategy))
-
-    # Execute ALL sections in parallel! 🚀
-    print(f"   ⚡ Running {len(section_tasks)} sections in parallel...\n")
-    section_results = await asyncio.gather(*section_tasks)
-
-    # Merge all section results
-    all_narrations = {}
-    for section_narrations in section_results:
-        all_narrations.update(section_narrations)
+                print(f"      Slide {slide_idx + 1}: {word_count} words")
 
     # Extract narrations in order
     narrations = []
