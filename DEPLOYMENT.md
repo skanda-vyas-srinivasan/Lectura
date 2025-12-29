@@ -28,7 +28,7 @@ In Railway project settings, add these environment variables:
 
 ```bash
 # Gemini API Key
-GEMINI_API_KEY=AIzaSyBytri0Lcpg-kw8gukPcyuPUz0R7adhl-c
+GEMINI_API_KEY=your_gemini_api_key_here
 
 # Google Cloud TTS Credentials (see note below)
 GOOGLE_TTS_CREDENTIALS_PATH=/app/credentials.json
