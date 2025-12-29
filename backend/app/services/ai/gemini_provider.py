@@ -696,17 +696,9 @@ Generate the narration now (narration text only, no preamble):"""
         """Fix common JSON escape issues from LLM responses."""
         import re
 
-        # Find all string values in JSON and fix backslashes
-        # This regex finds strings in JSON (between quotes, not keys)
-        def fix_escape(match):
-            string_content = match.group(1)
-            # Escape single backslashes that aren't already escaped
-            # But preserve already valid escapes like \n, \t, \"
-            fixed = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', string_content)
-            return f'"{fixed}"'
-
-        # Match JSON string values (text between quotes, handling escaped quotes)
-        json_text = re.sub(r'"((?:[^"\\]|\\.)*)(?<!\\)"', fix_escape, json_text)
+        # Ultra aggressive: just remove all backslashes
+        # LaTeX notation like \alpha, \subseteq shouldn't be in JSON responses anyway
+        json_text = json_text.replace('\\', '')
 
         return json_text
 
