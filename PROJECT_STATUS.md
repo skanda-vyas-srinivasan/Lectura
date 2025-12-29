@@ -217,7 +217,7 @@ For a 50-slide lecture:
 
 ```bash
 AI_PROVIDER=gemini
-GEMINI_API_KEY=AIzaSyBytri0Lcpg-kw8gukPcyuPUz0R7adhl-c
+GEMINI_API_KEY=your_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
 ```
 
