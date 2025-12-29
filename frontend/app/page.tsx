@@ -81,13 +81,12 @@ export default function Home() {
     setTtsTestError(null)
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/test-tts?provider=${ttsProvider}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `text=${encodeURIComponent(ttsTestText)}`,
-      })
+      const response = await fetch(
+        `${API_URL}/api/v1/test-tts?text=${encodeURIComponent(ttsTestText)}&provider=${ttsProvider}`,
+        {
+          method: 'POST',
+        }
+      )
 
       if (!response.ok) {
         const errorData = await response.json()
