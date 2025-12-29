@@ -12,6 +12,12 @@ export default function Home() {
   const [enableVision, setEnableVision] = useState(false)
   const [ttsProvider, setTtsProvider] = useState<'google' | 'edge'>('google')
 
+  // TTS Test state
+  const [showTtsTest, setShowTtsTest] = useState(false)
+  const [ttsTestText, setTtsTestText] = useState('Hello, this is a test of the text to speech system.')
+  const [ttsTestLoading, setTtsTestLoading] = useState(false)
+  const [ttsTestError, setTtsTestError] = useState<string | null>(null)
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(true)
@@ -61,12 +67,45 @@ export default function Home() {
         setError('Please upload a PDF or PPTX file')
       }
     }
-  }, [])
+  }, [uploadFile])
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       uploadFile(file)
+    }
+  }
+
+  const testTts = async () => {
+    setTtsTestLoading(true)
+    setTtsTestError(null)
+
+    try {
+      const response = await fetch(`${API_URL}/api/v1/test-tts?provider=${ttsProvider}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `text=${encodeURIComponent(ttsTestText)}`,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'TTS test failed')
+      }
+
+      // Get the audio blob
+      const audioBlob = await response.blob()
+      const audioUrl = URL.createObjectURL(audioBlob)
+
+      // Play the audio
+      const audio = new Audio(audioUrl)
+      audio.play()
+
+      setTtsTestLoading(false)
+    } catch (err) {
+      setTtsTestError(err instanceof Error ? err.message : 'TTS test failed')
+      setTtsTestLoading(false)
     }
   }
 
@@ -245,6 +284,58 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            {/* TTS Test Section */}
+            <div className="mt-8">
+              <button
+                onClick={() => setShowTtsTest(!showTtsTest)}
+                className="w-full text-center text-sm text-gray-500 hover:text-gray-400 transition-colors"
+              >
+                {showTtsTest ? '▼' : '▶'} TTS Quick Test (Debug)
+              </button>
+
+              {showTtsTest && (
+                <div className="mt-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm text-gray-400">Test Text:</label>
+                    <textarea
+                      value={ttsTestText}
+                      onChange={(e) => setTtsTestText(e.target.value)}
+                      className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+                      rows={3}
+                      placeholder="Enter text to test TTS..."
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <button
+                      onClick={testTts}
+                      disabled={ttsTestLoading || !ttsTestText}
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all"
+                    >
+                      {ttsTestLoading ? (
+                        <span className="flex items-center justify-center space-x-2">
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          <span>Testing...</span>
+                        </span>
+                      ) : (
+                        `Test ${ttsProvider === 'google' ? 'Google' : 'Edge'} TTS`
+                      )}
+                    </button>
+                  </div>
+
+                  {ttsTestError && (
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
+                      <p className="text-sm text-red-300 font-mono">{ttsTestError}</p>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-gray-500 text-center">
+                    This will play audio directly in your browser. Make sure your volume is on!
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
         </div>

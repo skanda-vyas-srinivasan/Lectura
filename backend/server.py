@@ -464,6 +464,44 @@ async def get_audio(session_id: str, slide_index: int):
     return FileResponse(audio_file, media_type="audio/mpeg")
 
 
+@app.post("/api/v1/test-tts")
+async def test_tts(text: str = "Hello, this is a test of the text to speech system.", provider: str = "google"):
+    """
+    Quick TTS test endpoint - generates audio from text without needing a full PDF upload.
+
+    Args:
+        text: Text to convert to speech (default: test message)
+        provider: TTS provider to use - "google" or "edge" (default: "google")
+    """
+    import tempfile
+    from pathlib import Path
+
+    try:
+        # Create temporary file for audio
+        with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio:
+            temp_audio_path = temp_audio.name
+
+        # Initialize TTS provider
+        if provider == "edge":
+            from app.services.tts import EdgeTTSProvider
+            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
+        else:  # google (default)
+            from app.services.tts import GoogleTTSProvider
+            tts = GoogleTTSProvider(
+                voice_name="en-US-Neural2-J",
+                credentials_path=settings.google_tts_credentials_path if settings.google_tts_credentials_path else None
+            )
+
+        # Generate audio
+        await tts.generate_audio(text, temp_audio_path)
+
+        # Return the audio file
+        return FileResponse(temp_audio_path, media_type="audio/mpeg", filename="test.mp3")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"TTS test failed: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
