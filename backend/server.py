@@ -116,14 +116,14 @@ def check_rate_limit(ip: str, max_requests: int = 5, window_hours: int = 24) -> 
 
 
 @app.post("/api/v1/upload")
-async def upload_file(request: Request, file: UploadFile = File(...), enable_vision: bool = False, tts_provider: str = "google"):
+async def upload_file(request: Request, file: UploadFile = File(...), enable_vision: bool = False, tts_provider: str = "edge"):
     """Upload a PDF or PPTX file and start processing.
 
     Args:
         request: FastAPI request object (to get client IP)
         file: The PDF or PPTX file to process
         enable_vision: Whether to enable vision analysis for diagrams/tables (default: False)
-        tts_provider: TTS provider to use - "google" or "edge" (default: "google")
+        tts_provider: TTS provider to use - "edge", "piper", or "google" (default: "edge")
     """
     # Get client IP
     client_ip = request.client.host
@@ -335,11 +335,18 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         if tts_provider == "edge":
             from app.services.tts import EdgeTTSProvider
             tts = EdgeTTSProvider(voice="en-US-GuyNeural")
-        else:  # google (default)
+        elif tts_provider == "piper":
+            from app.services.tts import PiperTTSProvider
+            tts = PiperTTSProvider()
+        elif tts_provider == "google":
             tts = GoogleTTSProvider(
                 voice_name="en-US-Neural2-J",
                 credentials_path=settings.google_tts_credentials_path if settings.google_tts_credentials_path else None
             )
+        else:
+            # Default to edge (free, no auth needed)
+            from app.services.tts import EdgeTTSProvider
+            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
 
         # Store word timings for each slide
         all_timings = {}
@@ -507,12 +514,19 @@ async def test_tts(text: str = "Hello, this is a test of the text to speech syst
         if provider == "edge":
             from app.services.tts import EdgeTTSProvider
             tts = EdgeTTSProvider(voice="en-US-GuyNeural")
-        else:  # google (default)
+        elif provider == "piper":
+            from app.services.tts import PiperTTSProvider
+            tts = PiperTTSProvider()
+        elif provider == "google":
             from app.services.tts import GoogleTTSProvider
             tts = GoogleTTSProvider(
                 voice_name="en-US-Neural2-J",
                 credentials_path=settings.google_tts_credentials_path if settings.google_tts_credentials_path else None
             )
+        else:
+            # Default to edge (free, no auth needed)
+            from app.services.tts import EdgeTTSProvider
+            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
 
         # Generate audio
         await tts.generate_audio(text, temp_audio_path)
