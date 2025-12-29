@@ -123,7 +123,7 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
         request: FastAPI request object (to get client IP)
         file: The PDF or PPTX file to process
         enable_vision: Whether to enable vision analysis for diagrams/tables (default: False)
-        tts_provider: TTS provider to use - "edge" (default), "piper", or "google" [WIP]
+        tts_provider: TTS provider (currently only "edge" supported)
     """
     # Get client IP
     client_ip = request.client.host
@@ -331,20 +331,9 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
             "total_slides": len(slides)
         }
 
-        # Initialize TTS provider based on user choice
-        if tts_provider == "edge":
-            from app.services.tts import EdgeTTSProvider
-            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
-        elif tts_provider == "piper":
-            from app.services.tts import PiperTTSProvider
-            tts = PiperTTSProvider()
-        elif tts_provider == "google":
-            # WIP: Google TTS auth not configured yet
-            raise ValueError("⚠️ Google TTS is WIP - authentication setup incomplete. Use 'edge' or 'piper' instead.")
-        else:
-            # Default to edge (free, no auth needed)
-            from app.services.tts import EdgeTTSProvider
-            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
+        # Initialize TTS provider (Edge TTS only for now)
+        from app.services.tts import EdgeTTSProvider
+        tts = EdgeTTSProvider(voice="en-US-GuyNeural")
 
         # Store word timings for each slide
         all_timings = {}
@@ -508,20 +497,9 @@ async def test_tts(text: str = "Hello, this is a test of the text to speech syst
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio:
             temp_audio_path = temp_audio.name
 
-        # Initialize TTS provider
-        if provider == "edge":
-            from app.services.tts import EdgeTTSProvider
-            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
-        elif provider == "piper":
-            from app.services.tts import PiperTTSProvider
-            tts = PiperTTSProvider()
-        elif provider == "google":
-            # WIP: Google TTS auth not configured yet
-            raise ValueError("⚠️ Google TTS is WIP - authentication setup incomplete. Use 'edge' or 'piper' instead.")
-        else:
-            # Default to edge (free, no auth needed)
-            from app.services.tts import EdgeTTSProvider
-            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
+        # Initialize TTS provider (Edge TTS only for now)
+        from app.services.tts import EdgeTTSProvider
+        tts = EdgeTTSProvider(voice="en-US-GuyNeural")
 
         # Generate audio
         await tts.generate_audio(text, temp_audio_path)

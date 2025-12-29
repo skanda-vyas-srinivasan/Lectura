@@ -10,7 +10,7 @@ export default function Home() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [enableVision, setEnableVision] = useState(false)
-  const [ttsProvider, setTtsProvider] = useState<'edge' | 'piper' | 'google'>('edge')
+  const [ttsProvider, setTtsProvider] = useState<'edge' | 'google'>('edge')
 
   // TTS Test state
   const [showTtsTest, setShowTtsTest] = useState(false)
@@ -173,26 +173,21 @@ export default function Home() {
                 </div>
               </label>
 
-              {/* TTS Provider selector */}
-              <div className="relative">
-                <select
-                  value={ttsProvider}
-                  onChange={(e) => setTtsProvider(e.target.value as 'edge' | 'piper' | 'google')}
-                  className="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4 text-white appearance-none cursor-pointer hover:bg-white/10 transition-all focus:outline-none focus:border-blue-500/50"
-                >
-                  <option value="edge" className="bg-gray-900">Edge TTS - Free (Default)</option>
-                  <option value="piper" className="bg-gray-900">Piper TTS - Free, Better Quality</option>
-                  <option value="google" disabled className="bg-gray-900 text-gray-500">Google TTS - ⚠️ WIP (Auth Required)</option>
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-                <div className="absolute left-6 top-full mt-2 text-xs text-gray-500">
-                  {ttsProvider === 'edge' && '🔊 Robotic but reliable'}
-                  {ttsProvider === 'piper' && '🎤 Natural voice, runs locally'}
-                  {ttsProvider === 'google' && '⚠️ Not available yet'}
+              {/* TTS Provider info */}
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-white flex items-center space-x-2">
+                      <span>🔊 Edge TTS</span>
+                      <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">FREE</span>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">
+                      Free voice synthesis - no setup required
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Default
+                  </div>
                 </div>
               </div>
             </div>
@@ -315,7 +310,7 @@ export default function Home() {
                           <span>Testing...</span>
                         </span>
                       ) : (
-                        `Test ${ttsProvider === 'google' ? 'Google' : ttsProvider === 'piper' ? 'Piper' : 'Edge'} TTS`
+                        `Test Edge TTS`
                       )}
                     </button>
                   </div>
