@@ -12,6 +12,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 import json
+from app.config import settings
 
 # Session storage directory
 SESSIONS_DIR = Path("backend/sessions")
