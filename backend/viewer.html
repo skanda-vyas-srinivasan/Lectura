@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Lecturer - 3. Linear Inequalities and Polyhedra</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a1a; color: #fff; display: flex; flex-direction: column; height: 100vh; }
+        .header { background: #2d2d2d; padding: 1rem 2rem; border-bottom: 2px solid #3d3d3d; display: flex; align-items: center; justify-content: space-between; }
+        .header h1 { font-size: 1.5rem; font-weight: 600; }
+        .header p { color: #999; font-size: 0.9rem; margin-top: 0.25rem; }
+        .transcript-toggle { background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+        .transcript-toggle:hover { background: #2563eb; }
+        .main-content { flex: 1; display: flex; overflow: hidden; }
+        .slide-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; background: #222; transition: all 0.3s; }
+        .slide-container.with-transcript { flex: 0.6; }
+        .slide-display { background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.5); max-width: 90%; max-height: 90%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .slide-image { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .transcript-panel { width: 0; background: #2d2d2d; border-left: 2px solid #3d3d3d; overflow-y: auto; transition: width 0.3s; display: flex; flex-direction: column; }
+        .transcript-panel.open { width: 40%; }
+        .transcript-header { padding: 1.5rem; border-bottom: 2px solid #3d3d3d; background: #252525; }
+        .transcript-header h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .transcript-header .slide-title { color: #3b82f6; font-size: 0.9rem; }
+        .transcript-content { padding: 1.5rem; line-height: 1.8; color: #ddd; flex: 1; overflow-y: auto; }
+        .transcript-content p { margin-bottom: 1rem; }
+        .controls { background: #2d2d2d; padding: 1.5rem 2rem; border-top: 2px solid #3d3d3d; }
+        .progress-bar { width: 100%; height: 4px; background: #3d3d3d; border-radius: 2px; margin-bottom: 1rem; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); width: 0%; transition: width 0.1s linear; }
+        .control-buttons { display: flex; align-items: center; gap: 1rem; }
+        .btn { background: #3b82f6; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
+        .btn:hover { background: #2563eb; transform: translateY(-1px); }
+        .btn:disabled { background: #4a4a4a; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: #4a4a4a; }
+        .btn-secondary:hover { background: #5a5a5a; }
+        .slide-info { flex: 1; text-align: center; font-size: 1.1rem; color: #999; }
+        .current-slide { color: #3b82f6; font-weight: 600; }
+        .audio-time { margin-left: auto; color: #999; font-size: 0.9rem; }
+        .status { text-align: center; color: #3b82f6; margin-bottom: 1rem; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>🎓 AI Lecturer</h1>
+            <p>3. Linear Inequalities and Polyhedra</p>
+        </div>
+        <button class="transcript-toggle" onclick="toggleTranscript()">📄 Show Transcript</button>
+    </div>
+
+    <div class="main-content">
+        <div class="slide-container" id="slideContainer">
+            <div class="slide-display">
+                <img id="slideImage" class="slide-image" src="output/slides/slide_000.png" alt="Slide 1">
+            </div>
+        </div>
+        <div class="transcript-panel" id="transcriptPanel">
+            <div class="transcript-header">
+                <h2>Transcript</h2>
+                <div class="slide-title" id="transcriptSlideTitle">Slide 1</div>
+            </div>
+            <div class="transcript-content" id="transcriptContent"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="status" id="status">Ready</div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="control-buttons">
+            <button class="btn btn-secondary" id="prevBtn" onclick="previousSlide()">⏮ Previous</button>
+            <button class="btn" id="playPauseBtn" onclick="togglePlayPause()">▶️ Play</button>
+            <button class="btn btn-secondary" id="nextBtn" onclick="nextSlide()">Next ⏭</button>
+            <div class="slide-info"><span class="current-slide" id="currentSlide">1</span> / <span id="totalSlides">5</span></div>
+            <div class="audio-time"><span id="currentTime">0:00</span> / <span id="duration">0:00</span></div>
+        </div>
+    </div>
+
+    <audio id="audioPlayer"></audio>
+
+    <script>
+        const TOTAL_SLIDES = 5;
+        const AUDIO_PATH = 'output/audio/';
+        const SLIDES_PATH = 'output/slides/';
+
+        let currentSlide = 0;
+        let isPlaying = false;
+        let audio = document.getElementById('audioPlayer');
+        let transcriptOpen = false;
+
+        const slideTitles = ["ISyE/Math/CS 728 Integer Optimization", "Outline", "3.4 Affine combinations and dimension of a set", "Affine Combinations, Affine Spaces", "Affine Combinations, Affine Spaces"];
+        const transcripts = ["Welcome everyone to ISyE/Math/CS 728, Integer Optimization. Today, we'll be diving into the fundamental concepts of Linear Inequalities and Polyhedra, which form the bedrock of much of what we'll explore in this course.", "Alright, so let's look at the specific outline for today's lecture, as we dive deeper into linear inequalities and polyhedra. We'll start by defining affine combinations and understanding the dimension of a set. Following this, we'll explore the fundamental Theorem of Minkowski-Weyl, which is central to our understanding of polyhedra. We'll then move on to characterize polyhedra further by examining the Lineality Space and Recession Cone. Our discussion will then progress to Faces, Minimal Faces, and the important concepts of Edges and Extreme Rays. We'll conclude our session by discussing Carath\u00e9odory\u2019s Theorem.", "Moving forward in our outline, we'll now delve into the fundamental concepts of affine combinations and the dimension of a set, crucial for precisely defining the geometric objects we'll study.", "Alright, let's dive into some foundational definitions, starting with affine combinations and affine spaces. An affine combination is a specialized type of linear combination that's fundamental to understanding polyhedra. Specifically, a point x in R n is an affine combination of a set of points x1 through xq, also in R n, if x can be expressed as a weighted sum of these points. The key distinguishing factor, and what makes it an *affine* combination rather than just a general linear combination, is the condition that the sum of all the scalar coefficients, lambda j, must equal one. So, we have x equals the sum from j equals one to q of lambda j times xj, with the crucial constraint that the sum from j equals one to q of lambda j equals one. This 'sum to one' condition effectively makes it a weighted average, allowing us to define lines, planes, and other geometric structures that don't necessarily pass through the origin.", "Building on this concept of an affine combination, we can now define what it means for a set of points to be *affinely independent*. A set of points, say x1 through xq, are affinely independent if none of these points can be expressed as an affine combination of the *others* within that same set. This is a crucial concept for determining the 'dimension' of a set of points and forming the basis for affine spaces, much like linear independence forms the basis for vector spaces. If points are affinely independent, they provide a non-redundant way to describe a geometric structure."];
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTranscript() {
+            const panel = document.getElementById('transcriptPanel');
+            const container = document.getElementById('slideContainer');
+            const btn = document.querySelector('.transcript-toggle');
+            transcriptOpen = !transcriptOpen;
+            if (transcriptOpen) {
+                panel.classList.add('open');
+                container.classList.add('with-transcript');
+                btn.textContent = '✖ Hide Transcript';
+            } else {
+                panel.classList.remove('open');
+                container.classList.remove('with-transcript');
+                btn.textContent = '📄 Show Transcript';
+            }
+        }
+
+        function updateTranscript() {
+            document.getElementById('transcriptSlideTitle').textContent = `Slide ${currentSlide + 1}: ${slideTitles[currentSlide]}`;
+            document.getElementById('transcriptContent').innerHTML = `<p>${transcripts[currentSlide]}</p>`;
+        }
+
+        function updateUI() {
+            document.getElementById('slideImage').src = `${SLIDES_PATH}slide_${currentSlide.toString().padStart(3, '0')}.png`;
+            document.getElementById('currentSlide').textContent = currentSlide + 1;
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === TOTAL_SLIDES - 1;
+            updateTranscript();
+        }
+
+        function loadSlide(slideIndex) {
+            currentSlide = slideIndex;
+            audio.src = `${AUDIO_PATH}slide_${slideIndex.toString().padStart(3, '0')}.mp3`;
+            updateUI();
+            document.getElementById('status').textContent = `Loading slide ${slideIndex + 1}...`;
+            if (isPlaying) {
+                audio.play().then(() => {
+                    document.getElementById('status').textContent = `Playing slide ${slideIndex + 1}`;
+                }).catch(err => {
+                    console.error('Error:', err);
+                    document.getElementById('status').textContent = 'Error loading audio';
+                    isPlaying = false;
+                    updatePlayButton();
+                });
+            } else {
+                document.getElementById('status').textContent = 'Ready';
+            }
+        }
+
+        function togglePlayPause() {
+            if (isPlaying) {
+                audio.pause();
+                isPlaying = false;
+                document.getElementById('status').textContent = 'Paused';
+            } else {
+                audio.play().then(() => {
+                    isPlaying = true;
+                    document.getElementById('status').textContent = `Playing slide ${currentSlide + 1}`;
+                }).catch(err => {
+                    console.error('Error:', err);
+                    document.getElementById('status').textContent = 'Error playing audio';
+                });
+            }
+            updatePlayButton();
+        }
+
+        function updatePlayButton() {
+            document.getElementById('playPauseBtn').textContent = isPlaying ? '⏸ Pause' : '▶️ Play';
+        }
+
+        function nextSlide() {
+            if (currentSlide < TOTAL_SLIDES - 1) loadSlide(currentSlide + 1);
+        }
+
+        function previousSlide() {
+            if (currentSlide > 0) loadSlide(currentSlide - 1);
+        }
+
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                document.getElementById('progress').style.width = (audio.currentTime / audio.duration) * 100 + '%';
+                document.getElementById('currentTime').textContent = formatTime(audio.currentTime);
+                document.getElementById('duration').textContent = formatTime(audio.duration);
+            }
+        });
+
+        audio.addEventListener('ended', () => {
+            document.getElementById('status').textContent = 'Slide complete';
+            isPlaying = false;
+            updatePlayButton();
+            if (currentSlide < TOTAL_SLIDES - 1) {
+                setTimeout(() => {
+                    document.getElementById('status').textContent = 'Auto-advancing...';
+                    nextSlide();
+                    setTimeout(() => {
+                        if (!isPlaying) togglePlayPause();
+                    }, 500);
+                }, 1000);
+            } else {
+                document.getElementById('status').textContent = 'Lecture complete! 🎉';
+            }
+        });
+
+        audio.addEventListener('loadedmetadata', () => {
+            document.getElementById('duration').textContent = formatTime(audio.duration);
+        });
+
+        loadSlide(0);
+        updateUI();
+    </script>
+</body>
+</html>
