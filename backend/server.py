@@ -296,12 +296,24 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
 
         for section_strategy in section_strategies:
             section_slides = slides[section_strategy.start_slide:section_strategy.end_slide + 1]
-            section_narrations = await gemini_provider.generate_section_narrations(
-                section_slides=section_slides,
-                section_strategy=section_strategy.model_dump(),
-                global_plan=global_plan_dict
-            )
-            all_narrations.update(section_narrations)
+            try:
+                section_narrations = await gemini_provider.generate_section_narrations(
+                    section_slides=section_slides,
+                    section_strategy=section_strategy.model_dump(),
+                    global_plan=global_plan_dict
+                )
+                all_narrations.update(section_narrations)
+                print(f"✅ Generated narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}")
+            except Exception as e:
+                print(f"❌ Failed to generate narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}: {e}")
+                import traceback
+                traceback.print_exc()
+
+        # Check for missing narrations
+        missing_slides = [i for i in range(len(slides)) if i not in all_narrations]
+        if missing_slides:
+            print(f"⚠️  Missing narrations for {len(missing_slides)} slides: {missing_slides}")
+        print(f"✅ Have narrations for {len(all_narrations)}/{len(slides)} slides")
 
         # Phase 5: Generate audio
         sessions[session_id]["status"] = {
@@ -328,23 +340,26 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         for slide_idx in sorted(all_narrations.keys()):
             narration = all_narrations[slide_idx]
 
-            # Clean narration for TTS (remove all markdown and symbols)
-            import re
-            clean_narration = narration
-            # Remove backticks
-            clean_narration = clean_narration.replace("`", "")
-            # Remove asterisks (bold/italic markdown)
-            clean_narration = clean_narration.replace("*", "")
-            # Remove underscores (markdown emphasis)
-            clean_narration = re.sub(r'(?<!\w)_(?!\w)', '', clean_narration)
-            # Remove markdown headers
-            clean_narration = re.sub(r'^#+\s+', '', clean_narration, flags=re.MULTILINE)
-            # Remove double spaces
-            clean_narration = re.sub(r'\s+', ' ', clean_narration).strip()
+            try:
+                # Clean narration for TTS (remove all markdown and symbols)
+                import re
+                clean_narration = narration
+                # Remove backticks
+                clean_narration = clean_narration.replace("`", "")
+                # Remove asterisks (bold/italic markdown)
+                clean_narration = clean_narration.replace("*", "")
+                # Remove underscores (markdown emphasis)
+                clean_narration = re.sub(r'(?<!\w)_(?!\w)', '', clean_narration)
+                # Remove markdown headers
+                clean_narration = re.sub(r'^#+\s+', '', clean_narration, flags=re.MULTILINE)
+                # Remove double spaces
+                clean_narration = re.sub(r'\s+', ' ', clean_narration).strip()
 
-            output_file = output_audio_dir / f"slide_{slide_idx:03d}.mp3"
-            timing_data = await tts.generate_audio(clean_narration, str(output_file))
-            all_timings[slide_idx] = timing_data["timings"]
+                output_file = output_audio_dir / f"slide_{slide_idx:03d}.mp3"
+                timing_data = await tts.generate_audio(clean_narration, str(output_file))
+                all_timings[slide_idx] = timing_data["timings"]
+            except Exception as e:
+                print(f"❌ Failed to generate audio for slide {slide_idx}: {e}")
 
         # Phase 6: Store lecture data
         sessions[session_id]["status"] = {
