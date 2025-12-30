@@ -10,7 +10,7 @@ export default function Home() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [enableVision, setEnableVision] = useState(false)
-  const [ttsProvider, setTtsProvider] = useState<'edge' | 'google'>('edge')
+  const [ttsProvider, setTtsProvider] = useState<'edge' | 'polly'>('polly')
 
   // TTS Test state
   const [showTtsTest, setShowTtsTest] = useState(false)
@@ -173,21 +173,21 @@ export default function Home() {
                 </div>
               </label>
 
-              {/* TTS Provider info */}
+              {/* TTS Provider selector */}
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-semibold text-white flex items-center space-x-2">
-                      <span>🔊 Edge TTS</span>
-                      <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">FREE</span>
-                    </div>
-                    <div className="text-xs text-gray-400 mt-0.5">
-                      Free voice synthesis - no setup required
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    Default
-                  </div>
+                <label className="block text-sm font-semibold text-white mb-3">
+                  🎤 Voice Provider
+                </label>
+                <select
+                  value={ttsProvider}
+                  onChange={(e) => setTtsProvider(e.target.value as 'edge' | 'polly')}
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                >
+                  <option value="polly" className="bg-gray-900">🎤 AWS Polly (Neural) - Better Quality</option>
+                  <option value="edge" className="bg-gray-900">🔊 Edge TTS - Fast & Free</option>
+                </select>
+                <div className="text-xs text-gray-400 mt-2">
+                  {ttsProvider === 'polly' ? 'High-quality neural voices (requires AWS setup)' : 'Free voice synthesis - no setup required'}
                 </div>
               </div>
             </div>
