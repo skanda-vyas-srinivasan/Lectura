@@ -116,7 +116,7 @@ def check_rate_limit(ip: str, max_requests: int = 5, window_hours: int = 24) -> 
 
 
 @app.post("/api/v1/upload")
-async def upload_file(request: Request, file: UploadFile = File(...), enable_vision: bool = False, tts_provider: str = "edge"):
+async def upload_file(request: Request, file: UploadFile = File(...), enable_vision: bool = False, tts_provider: str = "edge", polly_voice: str = "Matthew"):
     """Upload a PDF or PPTX file and start processing.
 
     Args:
@@ -167,12 +167,12 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     save_session(session_id)
 
     # Start processing in background
-    asyncio.create_task(process_lecture(session_id, str(temp_file), enable_vision, tts_provider))
+    asyncio.create_task(process_lecture(session_id, str(temp_file), enable_vision, tts_provider, polly_voice))
 
     return {"session_id": session_id}
 
 
-async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = False, tts_provider: str = "google"):
+async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = False, tts_provider: str = "google", polly_voice: str = "Matthew"):
     """Process lecture in background.
 
     Args:
@@ -376,7 +376,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         if tts_provider == "polly":
             from app.services.tts import PollyTTSProvider
             tts = PollyTTSProvider(
-                voice_id="Matthew",
+                voice_id=polly_voice,
                 engine="neural",
                 aws_access_key_id=settings.aws_access_key_id,
                 aws_secret_access_key=settings.aws_secret_access_key,
@@ -553,7 +553,7 @@ async def test_tts(text: str = "Hello, this is a test of the text to speech syst
         if tts_provider == "polly":
             from app.services.tts import PollyTTSProvider
             tts = PollyTTSProvider(
-                voice_id="Matthew",
+                voice_id=polly_voice,
                 engine="neural",
                 aws_access_key_id=settings.aws_access_key_id,
                 aws_secret_access_key=settings.aws_secret_access_key,

@@ -11,6 +11,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [enableVision, setEnableVision] = useState(false)
   const [ttsProvider, setTtsProvider] = useState<'edge' | 'polly'>('polly')
+  const [pollyVoice, setPollyVoice] = useState<string>('Matthew')
 
   // TTS Test state
   const [showTtsTest, setShowTtsTest] = useState(false)
@@ -36,7 +37,7 @@ export default function Home() {
     formData.append('file', file)
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/upload?enable_vision=${enableVision}&tts_provider=${ttsProvider}`, {
+      const response = await fetch(`${API_URL}/api/v1/upload?enable_vision=${enableVision}&tts_provider=${ttsProvider}&polly_voice=${pollyVoice}`, {
         method: 'POST',
         body: formData,
       })
@@ -186,6 +187,31 @@ export default function Home() {
                   <option value="polly" className="bg-gray-900">🎤 AWS Polly (Neural) - Better Quality</option>
                   <option value="edge" className="bg-gray-900">🔊 Edge TTS - Fast & Free</option>
                 </select>
+
+                {/* Polly Voice Selector */}
+                {ttsProvider === 'polly' && (
+                  <div className="mt-3">
+                    <label className="block text-xs font-semibold text-gray-300 mb-2">
+                      Voice
+                    </label>
+                    <select
+                      value={pollyVoice}
+                      onChange={(e) => setPollyVoice(e.target.value)}
+                      className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                    >
+                      <option value="Matthew" className="bg-gray-900">Matthew (Male, US)</option>
+                      <option value="Joanna" className="bg-gray-900">Joanna (Female, US)</option>
+                      <option value="Salli" className="bg-gray-900">Salli (Female, US)</option>
+                      <option value="Joey" className="bg-gray-900">Joey (Male, US)</option>
+                      <option value="Justin" className="bg-gray-900">Justin (Male, US)</option>
+                      <option value="Kevin" className="bg-gray-900">Kevin (Male, US)</option>
+                      <option value="Kendra" className="bg-gray-900">Kendra (Female, US)</option>
+                      <option value="Ruth" className="bg-gray-900">Ruth (Female, US)</option>
+                      <option value="Stephen" className="bg-gray-900">Stephen (Male, US)</option>
+                    </select>
+                  </div>
+                )}
+
                 <div className="text-xs text-gray-400 mt-2">
                   {ttsProvider === 'polly' ? 'High-quality neural voices (requires AWS setup)' : 'Free voice synthesis - no setup required'}
                 </div>
