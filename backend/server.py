@@ -352,14 +352,9 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
             "total_slides": len(slides)
         }
 
-        # Initialize TTS provider
-        if tts_provider == "polly":
-            from app.services.tts import PollyTTSProvider
-            tts = PollyTTSProvider(voice_id="Matthew", engine="neural")
-        else:
-            # Default to Edge TTS (free, no auth)
-            from app.services.tts import EdgeTTSProvider
-            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
+        # Initialize TTS provider (Edge TTS - free, no auth)
+        from app.services.tts import EdgeTTSProvider
+        tts = EdgeTTSProvider(voice="en-US-GuyNeural")
 
         # Store word timings for each slide
         all_timings = {}
@@ -523,14 +518,9 @@ async def test_tts(text: str = "Hello, this is a test of the text to speech syst
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio:
             temp_audio_path = temp_audio.name
 
-        # Initialize TTS provider
-        if tts_provider == "polly":
-            from app.services.tts import PollyTTSProvider
-            tts = PollyTTSProvider(voice_id="Matthew", engine="neural")
-        else:
-            # Default to Edge TTS (free, no auth)
-            from app.services.tts import EdgeTTSProvider
-            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
+        # Initialize TTS provider (Edge TTS - free, no auth)
+        from app.services.tts import EdgeTTSProvider
+        tts = EdgeTTSProvider(voice="en-US-GuyNeural")
 
         # Generate audio
         await tts.generate_audio(text, temp_audio_path)
