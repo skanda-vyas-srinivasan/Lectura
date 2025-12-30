@@ -38,17 +38,17 @@ class PollyTTSProvider:
 
     async def generate_audio(self, text: str, output_path: str) -> Dict[str, Any]:
         """
-        Generate audio from text using AWS Polly.
+        Generate audio from text using AWS Polly with word timings.
 
         Args:
             text: Text to convert to speech
             output_path: Path to save the audio file
 
         Returns:
-            Dictionary with timing information (empty for now)
+            Dictionary with timing information
         """
-        # Call Polly to synthesize speech
-        response = self.client.synthesize_speech(
+        # Generate audio
+        audio_response = self.client.synthesize_speech(
             Text=text,
             OutputFormat='mp3',
             VoiceId=self.voice_id,
@@ -57,11 +57,32 @@ class PollyTTSProvider:
 
         # Save audio stream to file
         with open(output_path, 'wb') as f:
-            f.write(response['AudioStream'].read())
+            f.write(audio_response['AudioStream'].read())
 
-        # Note: Polly doesn't provide word-level timing in standard synthesis
-        # Would need SpeechMarkTypes for that, but adds complexity
-        return {"timings": []}
+        # Get speech marks for word-level timing
+        marks_response = self.client.synthesize_speech(
+            Text=text,
+            OutputFormat='json',
+            VoiceId=self.voice_id,
+            Engine=self.engine,
+            SpeechMarkTypes=['sentence']  # Get sentence boundaries
+        )
+
+        # Parse speech marks (newline-delimited JSON)
+        word_timings = []
+        marks_data = marks_response['AudioStream'].read().decode('utf-8')
+
+        for line in marks_data.strip().split('\n'):
+            if line:
+                import json
+                mark = json.loads(line)
+                if mark['type'] == 'sentence':
+                    word_timings.append({
+                        "word": mark['value'],
+                        "start_time": mark['time'] / 1000.0  # Convert ms to seconds
+                    })
+
+        return {"timings": word_timings}
 
     def get_available_voices(self) -> list:
         """Get list of available Polly voices."""
