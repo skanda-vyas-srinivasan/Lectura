@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     # TTS Configuration
     google_tts_credentials_path: str = ""
 
+    # AWS Polly Configuration
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    aws_region: str = "us-east-1"
+
     class Config:
         env_file = ".env"
         case_sensitive = False
