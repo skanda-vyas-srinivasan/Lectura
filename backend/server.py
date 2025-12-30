@@ -375,7 +375,13 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         # Initialize TTS provider
         if tts_provider == "polly":
             from app.services.tts import PollyTTSProvider
-            tts = PollyTTSProvider(voice_id="Matthew", engine="neural")
+            tts = PollyTTSProvider(
+                voice_id="Matthew",
+                engine="neural",
+                aws_access_key_id=settings.aws_access_key_id,
+                aws_secret_access_key=settings.aws_secret_access_key,
+                aws_region=settings.aws_region
+            )
         else:
             # Default to Edge TTS (free, no auth)
             from app.services.tts import EdgeTTSProvider
@@ -546,7 +552,13 @@ async def test_tts(text: str = "Hello, this is a test of the text to speech syst
         # Initialize TTS provider
         if tts_provider == "polly":
             from app.services.tts import PollyTTSProvider
-            tts = PollyTTSProvider(voice_id="Matthew", engine="neural")
+            tts = PollyTTSProvider(
+                voice_id="Matthew",
+                engine="neural",
+                aws_access_key_id=settings.aws_access_key_id,
+                aws_secret_access_key=settings.aws_secret_access_key,
+                aws_region=settings.aws_region
+            )
         else:
             # Default to Edge TTS (free, no auth)
             from app.services.tts import EdgeTTSProvider

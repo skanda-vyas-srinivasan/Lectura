@@ -7,21 +7,33 @@ from typing import Dict, Any
 class PollyTTSProvider:
     """AWS Polly TTS provider with high-quality neural voices."""
 
-    def __init__(self, voice_id: str = "Matthew", engine: str = "neural"):
+    def __init__(
+        self,
+        voice_id: str = "Matthew",
+        engine: str = "neural",
+        aws_access_key_id: str = None,
+        aws_secret_access_key: str = None,
+        aws_region: str = "us-east-1"
+    ):
         """
         Initialize AWS Polly TTS provider.
 
         Args:
             voice_id: Polly voice ID (e.g., "Matthew", "Joanna", "Salli")
             engine: Voice engine - "neural" (better quality) or "standard"
+            aws_access_key_id: AWS access key ID
+            aws_secret_access_key: AWS secret access key
+            aws_region: AWS region
         """
         self.voice_id = voice_id
         self.engine = engine
 
-        # Initialize boto3 client (uses AWS credentials from environment)
+        # Initialize boto3 client with explicit credentials
         self.client = boto3.client(
             'polly',
-            region_name=os.getenv('AWS_REGION', 'us-east-1')
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            region_name=aws_region
         )
 
     async def generate_audio(self, text: str, output_path: str) -> Dict[str, Any]:
