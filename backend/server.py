@@ -303,35 +303,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                     global_plan=global_plan_dict
                 )
                 all_narrations.update(section_narrations)
-                actual_slides = sorted(section_narrations.keys())
-                expected_slides = list(range(section_strategy.start_slide, section_strategy.end_slide + 1))
-                missing_in_section = [s for s in expected_slides if s not in actual_slides]
-
-                if missing_in_section:
-                    print(f"⚠️  Section {section_strategy.start_slide}-{section_strategy.end_slide}: Got {len(actual_slides)}/{len(expected_slides)} slides, missing {missing_in_section}")
-
-                    # FALLBACK: Regenerate missing slides individually
-                    print(f"   🔧 Regenerating {len(missing_in_section)} missing slides individually...")
-                    for missing_idx in missing_in_section:
-                        # Get previous narration for context (if available)
-                        prev_summary = None
-                        if missing_idx > 0 and missing_idx - 1 in all_narrations:
-                            prev_narration = all_narrations[missing_idx - 1]
-                            prev_summary = prev_narration[:200] + "..." if len(prev_narration) > 200 else prev_narration
-
-                        # Generate this slide individually
-                        try:
-                            narration = await gemini_provider.generate_narration(
-                                slide=slides[missing_idx],
-                                global_plan=global_plan_dict,
-                                previous_narration_summary=prev_summary
-                            )
-                            all_narrations[missing_idx] = narration
-                            print(f"      ✅ Regenerated slide {missing_idx + 1}")
-                        except Exception as e:
-                            print(f"      ❌ Failed to regenerate slide {missing_idx + 1}: {e}")
-                else:
-                    print(f"✅ Generated narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}")
+                print(f"✅ Generated narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}")
             except Exception as e:
                 print(f"❌ Failed to generate narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}: {e}")
                 import traceback
