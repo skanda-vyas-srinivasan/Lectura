@@ -294,20 +294,68 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         all_narrations = {}
         global_plan_dict = global_plan.model_dump()
 
+        # Chunk size: max slides per section (based on 4000 token limit)
+        # ~270 tokens/slide, so 4000/270 = ~14 slides max
+        CHUNK_SIZE = 14
+
         for section_strategy in section_strategies:
             section_slides = slides[section_strategy.start_slide:section_strategy.end_slide + 1]
-            try:
-                section_narrations = await gemini_provider.generate_section_narrations(
-                    section_slides=section_slides,
-                    section_strategy=section_strategy.model_dump(),
-                    global_plan=global_plan_dict
-                )
-                all_narrations.update(section_narrations)
-                print(f"✅ Generated narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}")
-            except Exception as e:
-                print(f"❌ Failed to generate narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}: {e}")
-                import traceback
-                traceback.print_exc()
+            num_section_slides = len(section_slides)
+
+            # If section is small enough, generate in one go
+            if num_section_slides <= CHUNK_SIZE:
+                try:
+                    section_narrations = await gemini_provider.generate_section_narrations(
+                        section_slides=section_slides,
+                        section_strategy=section_strategy.model_dump(),
+                        global_plan=global_plan_dict
+                    )
+                    all_narrations.update(section_narrations)
+                    print(f"✅ Generated narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}")
+                except Exception as e:
+                    print(f"❌ Failed to generate narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}: {e}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                # Large section - split into chunks and pass context between them
+                print(f"📦 Large section ({num_section_slides} slides) - splitting into chunks of {CHUNK_SIZE}")
+
+                for chunk_start in range(0, num_section_slides, CHUNK_SIZE):
+                    chunk_end = min(chunk_start + CHUNK_SIZE, num_section_slides)
+                    chunk_slides = section_slides[chunk_start:chunk_end]
+
+                    # Create chunk strategy
+                    chunk_strategy = section_strategy.model_dump().copy()
+                    chunk_strategy['start_slide'] = section_strategy.start_slide + chunk_start
+                    chunk_strategy['end_slide'] = section_strategy.start_slide + chunk_end - 1
+
+                    # Filter slide strategies for this chunk
+                    chunk_strategy['slide_strategies'] = [
+                        s for s in section_strategy.model_dump().get('slide_strategies', [])
+                        if chunk_strategy['start_slide'] <= s['slide_index'] <= chunk_strategy['end_slide']
+                    ]
+
+                    # For chunks after the first, add context from previous chunk
+                    if chunk_start > 0:
+                        # Get last narration from previous chunk as context
+                        prev_slide_idx = chunk_strategy['start_slide'] - 1
+                        if prev_slide_idx in all_narrations:
+                            prev_narration = all_narrations[prev_slide_idx]
+                            # Add context hint to narrative arc
+                            chunk_strategy['narrative_arc'] += f"\n\nCONTINUING FROM PREVIOUS: {prev_narration[-300:]}"
+
+                    try:
+                        chunk_narrations = await gemini_provider.generate_section_narrations(
+                            section_slides=chunk_slides,
+                            section_strategy=chunk_strategy,
+                            global_plan=global_plan_dict
+                        )
+                        all_narrations.update(chunk_narrations)
+                        print(f"✅ Generated chunk: slides {chunk_strategy['start_slide']}-{chunk_strategy['end_slide']}")
+                    except Exception as e:
+                        print(f"❌ Failed chunk {chunk_strategy['start_slide']}-{chunk_strategy['end_slide']}: {e}")
+                        import traceback
+                        traceback.print_exc()
 
         # Check for missing narrations
         missing_slides = [i for i in range(len(slides)) if i not in all_narrations]
