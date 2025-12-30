@@ -123,7 +123,7 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
         request: FastAPI request object (to get client IP)
         file: The PDF or PPTX file to process
         enable_vision: Whether to enable vision analysis for diagrams/tables (default: False)
-        tts_provider: TTS provider (currently only "edge" supported)
+        tts_provider: TTS provider - "edge" (free, robotic) or "polly" (free tier, better quality)
     """
     # Get client IP
     client_ip = request.client.host
@@ -309,6 +309,27 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
 
                 if missing_in_section:
                     print(f"⚠️  Section {section_strategy.start_slide}-{section_strategy.end_slide}: Got {len(actual_slides)}/{len(expected_slides)} slides, missing {missing_in_section}")
+
+                    # FALLBACK: Regenerate missing slides individually
+                    print(f"   🔧 Regenerating {len(missing_in_section)} missing slides individually...")
+                    for missing_idx in missing_in_section:
+                        # Get previous narration for context (if available)
+                        prev_summary = None
+                        if missing_idx > 0 and missing_idx - 1 in all_narrations:
+                            prev_narration = all_narrations[missing_idx - 1]
+                            prev_summary = prev_narration[:200] + "..." if len(prev_narration) > 200 else prev_narration
+
+                        # Generate this slide individually
+                        try:
+                            narration = await gemini_provider.generate_narration(
+                                slide=slides[missing_idx],
+                                global_plan=global_plan_dict,
+                                previous_narration_summary=prev_summary
+                            )
+                            all_narrations[missing_idx] = narration
+                            print(f"      ✅ Regenerated slide {missing_idx + 1}")
+                        except Exception as e:
+                            print(f"      ❌ Failed to regenerate slide {missing_idx + 1}: {e}")
                 else:
                     print(f"✅ Generated narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}")
             except Exception as e:
@@ -331,9 +352,14 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
             "total_slides": len(slides)
         }
 
-        # Initialize TTS provider (Edge TTS only for now)
-        from app.services.tts import EdgeTTSProvider
-        tts = EdgeTTSProvider(voice="en-US-GuyNeural")
+        # Initialize TTS provider
+        if tts_provider == "polly":
+            from app.services.tts import PollyTTSProvider
+            tts = PollyTTSProvider(voice_id="Matthew", engine="neural")
+        else:
+            # Default to Edge TTS (free, no auth)
+            from app.services.tts import EdgeTTSProvider
+            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
 
         # Store word timings for each slide
         all_timings = {}
@@ -497,9 +523,14 @@ async def test_tts(text: str = "Hello, this is a test of the text to speech syst
         with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio:
             temp_audio_path = temp_audio.name
 
-        # Initialize TTS provider (Edge TTS only for now)
-        from app.services.tts import EdgeTTSProvider
-        tts = EdgeTTSProvider(voice="en-US-GuyNeural")
+        # Initialize TTS provider
+        if tts_provider == "polly":
+            from app.services.tts import PollyTTSProvider
+            tts = PollyTTSProvider(voice_id="Matthew", engine="neural")
+        else:
+            # Default to Edge TTS (free, no auth)
+            from app.services.tts import EdgeTTSProvider
+            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
 
         # Generate audio
         await tts.generate_audio(text, temp_audio_path)
