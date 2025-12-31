@@ -372,25 +372,37 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         }
 
         # Initialize TTS provider
-        if tts_provider == "polly":
-            from app.services.tts import PollyTTSProvider
-            tts = PollyTTSProvider(
-                voice_id=polly_voice,
-                engine="neural",
-                aws_access_key_id=settings.aws_access_key_id,
-                aws_secret_access_key=settings.aws_secret_access_key,
-                aws_region=settings.aws_region
-            )
-        else:
-            # Default to Edge TTS (free, no auth)
-            from app.services.tts import EdgeTTSProvider
-            tts = EdgeTTSProvider(voice="en-US-GuyNeural")
+        print(f"🎤 Initializing TTS provider: {tts_provider}")
+        try:
+            if tts_provider == "polly":
+                from app.services.tts import PollyTTSProvider
+                print(f"   Polly voice: {polly_voice}, region: {settings.aws_region}")
+                tts = PollyTTSProvider(
+                    voice_id=polly_voice,
+                    engine="neural",
+                    aws_access_key_id=settings.aws_access_key_id,
+                    aws_secret_access_key=settings.aws_secret_access_key,
+                    aws_region=settings.aws_region
+                )
+                print(f"   ✅ Polly TTS initialized successfully")
+            else:
+                # Default to Edge TTS (free, no auth)
+                from app.services.tts import EdgeTTSProvider
+                tts = EdgeTTSProvider(voice="en-US-GuyNeural")
+                print(f"   ✅ Edge TTS initialized successfully")
+        except Exception as e:
+            print(f"   ❌ TTS initialization failed: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
 
         # Store word timings for each slide
         all_timings = {}
 
+        print(f"🔊 Starting audio generation for {len(all_narrations)} narrations...")
         for slide_idx in sorted(all_narrations.keys()):
             narration = all_narrations[slide_idx]
+            print(f"   Generating audio for slide {slide_idx}...")
 
             try:
                 # Clean narration for TTS (remove all markdown and symbols)
