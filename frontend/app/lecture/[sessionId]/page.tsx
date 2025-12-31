@@ -32,6 +32,8 @@ export default function LectureViewer() {
   const [showControls, setShowControls] = useState(true)
   const [audioLoading, setAudioLoading] = useState(false)
   const [audioError, setAudioError] = useState<string | null>(null)
+  const [slideError, setSlideError] = useState<string | null>(null)
+  const [slideCacheBuster, setSlideCacheBuster] = useState(0)
 
   const audioRef = useRef<HTMLAudioElement>(null)
   const prefetchAudioRef = useRef<HTMLAudioElement | null>(null)
@@ -76,6 +78,11 @@ export default function LectureViewer() {
     nextAudio.load()
     prefetchAudioRef.current = nextAudio
   }, [currentSlide, sessionId, lectureData])
+
+  useEffect(() => {
+    setSlideError(null)
+    setSlideCacheBuster(0)
+  }, [currentSlide])
 
   const togglePlayPause = () => {
     if (audioRef.current) {
@@ -253,6 +260,27 @@ export default function LectureViewer() {
     setAudioError('Audio failed to load. Please try again.')
   }
 
+  const handleSlideError = () => {
+    setSlideError('Slide failed to load. Please retry.')
+  }
+
+  const retryAudio = () => {
+    if (!audioRef.current) return
+    setAudioError(null)
+    setAudioLoading(true)
+    audioRef.current.load()
+    audioRef.current.play().then(() => {
+      setIsPlaying(true)
+    }).catch(() => {
+      setAudioLoading(false)
+    })
+  }
+
+  const retrySlide = () => {
+    setSlideError(null)
+    setSlideCacheBuster((value) => value + 1)
+  }
+
   if (!lectureData) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
@@ -319,15 +347,16 @@ export default function LectureViewer() {
               <div className={`absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-3xl blur-2xl opacity-50 ${isFullscreen ? 'hidden' : ''}`}></div>
               <div className={`relative flex-1 bg-black/40 backdrop-blur-xl border border-white/20 shadow-2xl overflow-hidden ${isFullscreen ? 'rounded-none border-0' : 'rounded-3xl p-4'}`}>
                 <img
-                  src={`${API_URL}/api/v1/session/${sessionId}/slide/${currentSlide}`}
+                  src={`${API_URL}/api/v1/session/${sessionId}/slide/${currentSlide}?v=${slideCacheBuster}`}
                   alt={`Slide ${currentSlide + 1}`}
                   className="w-full h-full object-contain"
+                  onError={handleSlideError}
                 />
 
-                {(audioLoading || audioError) && (
+                {(audioLoading || audioError || slideError) && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                     <div className="flex items-center space-x-3 bg-black/60 border border-white/10 rounded-xl px-5 py-3">
-                      {audioError ? (
+                      {(audioError || slideError) ? (
                         <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
@@ -335,8 +364,24 @@ export default function LectureViewer() {
                         <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin"></div>
                       )}
                       <span className="text-sm text-gray-200">
-                        {audioError ? audioError : 'Loading audio...'}
+                        {audioError || slideError || 'Loading audio...'}
                       </span>
+                      {audioError && (
+                        <button
+                          onClick={retryAudio}
+                          className="ml-2 text-xs font-semibold text-blue-300 hover:text-blue-200 transition-colors"
+                        >
+                          Retry
+                        </button>
+                      )}
+                      {slideError && (
+                        <button
+                          onClick={retrySlide}
+                          className="ml-2 text-xs font-semibold text-blue-300 hover:text-blue-200 transition-colors"
+                        >
+                          Retry
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

@@ -456,30 +456,37 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         all_timings = {}
 
         print(f"🔊 Starting audio generation for {len(all_narrations)} narrations...")
-        for slide_idx in sorted(all_narrations.keys()):
-            narration = all_narrations[slide_idx]
-            print(f"   Generating audio for slide {slide_idx}...")
+        tts_semaphore = asyncio.Semaphore(3)
 
-            try:
-                # Clean narration for TTS (remove all markdown and symbols)
-                import re
-                clean_narration = narration
-                # Remove backticks
-                clean_narration = clean_narration.replace("`", "")
-                # Remove asterisks (bold/italic markdown)
-                clean_narration = clean_narration.replace("*", "")
-                # Remove underscores (markdown emphasis)
-                clean_narration = re.sub(r'(?<!\w)_(?!\w)', '', clean_narration)
-                # Remove markdown headers
-                clean_narration = re.sub(r'^#+\s+', '', clean_narration, flags=re.MULTILINE)
-                # Remove double spaces
-                clean_narration = re.sub(r'\s+', ' ', clean_narration).strip()
+        async def generate_audio_for_slide(slide_idx: int, narration_text: str):
+            async with tts_semaphore:
+                print(f"   Generating audio for slide {slide_idx}...")
+                try:
+                    # Clean narration for TTS (remove all markdown and symbols)
+                    import re
+                    clean_narration = narration_text
+                    # Remove backticks
+                    clean_narration = clean_narration.replace("`", "")
+                    # Remove asterisks (bold/italic markdown)
+                    clean_narration = clean_narration.replace("*", "")
+                    # Remove underscores (markdown emphasis)
+                    clean_narration = re.sub(r'(?<!\w)_(?!\w)', '', clean_narration)
+                    # Remove markdown headers
+                    clean_narration = re.sub(r'^#+\s+', '', clean_narration, flags=re.MULTILINE)
+                    # Remove double spaces
+                    clean_narration = re.sub(r'\s+', ' ', clean_narration).strip()
 
-                output_file = output_audio_dir / f"slide_{slide_idx:03d}.mp3"
-                timing_data = await tts.generate_audio(clean_narration, str(output_file))
-                all_timings[slide_idx] = timing_data["timings"]
-            except Exception as e:
-                print(f"❌ Failed to generate audio for slide {slide_idx}: {e}")
+                    output_file = output_audio_dir / f"slide_{slide_idx:03d}.mp3"
+                    timing_data = await tts.generate_audio(clean_narration, str(output_file))
+                    all_timings[slide_idx] = timing_data["timings"]
+                except Exception as e:
+                    print(f"❌ Failed to generate audio for slide {slide_idx}: {e}")
+
+        tasks = [
+            generate_audio_for_slide(slide_idx, all_narrations[slide_idx])
+            for slide_idx in sorted(all_narrations.keys())
+        ]
+        await asyncio.gather(*tasks)
 
         # Phase 6: Store lecture data
         sessions[session_id]["status"] = {

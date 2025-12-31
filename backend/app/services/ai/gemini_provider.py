@@ -444,19 +444,46 @@ Begin narrating now:
         # Parse response to extract individual slide narrations
         full_narration = response.text.strip()
 
-        # Split by slide markers (tolerate slight formatting variance)
-        import re
-        slide_pattern = r'#{2,4}\s*SLIDE\s+(\d+)\s*#{2,4}\s*\n(.*?)(?=#{2,4}\s*SLIDE\s+\d+\s*#{2,4}\s*\n|$)'
-        matches = re.findall(slide_pattern, full_narration, re.DOTALL | re.IGNORECASE)
-        if not matches:
-            alt_pattern = r'(?:^|\n)\s*SLIDE\s+(\d+)\s*[:\-]*\s*\n?(.*?)(?=(?:\n\s*SLIDE\s+\d+)|$)'
-            matches = re.findall(alt_pattern, full_narration, re.DOTALL | re.IGNORECASE)
+        def parse_slide_markers(text: str) -> Dict[int, str]:
+            import re
+            slide_pattern = r'#{2,4}\s*SLIDE\s+(\d+)\s*#{2,4}\s*\n(.*?)(?=#{2,4}\s*SLIDE\s+\d+\s*#{2,4}\s*\n|$)'
+            matches = re.findall(slide_pattern, text, re.DOTALL | re.IGNORECASE)
+            if not matches:
+                alt_pattern = r'(?:^|\n)\s*SLIDE\s+(\d+)\s*[:\-]*\s*\n?(.*?)(?=(?:\n\s*SLIDE\s+\d+)|$)'
+                matches = re.findall(alt_pattern, text, re.DOTALL | re.IGNORECASE)
 
-        # Build result dict
-        narrations = {}
-        for slide_num_str, narration_text in matches:
-            slide_idx = int(slide_num_str) - 1  # Convert to 0-indexed
-            narrations[slide_idx] = narration_text.strip()
+            narrations_local: Dict[int, str] = {}
+            for slide_num_str, narration_text in matches:
+                slide_idx = int(slide_num_str) - 1  # Convert to 0-indexed
+                narrations_local[slide_idx] = narration_text.strip()
+            return narrations_local
+
+        narrations = parse_slide_markers(full_narration)
+
+        # If slide markers are missing, retry with a strict reformat prompt.
+        expected_indices = set(range(section_strategy["start_slide"], section_strategy["end_slide"] + 1))
+        missing_indices = expected_indices.difference(narrations.keys())
+        if missing_indices:
+            strict_prompt = f"""You are reformatting an existing lecture narration. Your ONLY task is to rewrite it so that each slide narration is preceded by a marker on its own line:
+### SLIDE X ###
+Use one marker for EVERY slide from {section_strategy['start_slide'] + 1} to {section_strategy['end_slide'] + 1}.
+Do NOT remove content. Do NOT add new content. Do NOT skip any slides.
+
+Return plain text only.
+
+ORIGINAL NARRATION:
+{full_narration}
+"""
+            retry_response = await asyncio.to_thread(
+                self.model.generate_content,
+                strict_prompt,
+                generation_config={
+                    "temperature": 0.1,
+                    "max_output_tokens": max_output_tokens,
+                }
+            )
+            retry_text = retry_response.text.strip()
+            narrations = parse_slide_markers(retry_text)
 
         return narrations
 
