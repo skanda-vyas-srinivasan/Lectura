@@ -330,9 +330,8 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         all_narrations = {}
         global_plan_dict = global_plan.model_dump()
 
-        # Chunk size: max slides per section (based on 4000 token limit)
-        # ~270 tokens/slide, so 4000/270 = ~14 slides max
-        CHUNK_SIZE = 14
+        # Chunk size: keep sections small to reduce truncation risk.
+        CHUNK_SIZE = 8
 
         for section_strategy in section_strategies:
             section_slides = slides[section_strategy.start_slide:section_strategy.end_slide + 1]
@@ -401,6 +400,22 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         missing_slides = [i for i in range(len(slides)) if i not in all_narrations]
         if missing_slides:
             print(f"⚠️  Missing narrations for {len(missing_slides)} slides: {missing_slides}")
+            print("🔁 Generating missing narrations individually...")
+            for slide_idx in missing_slides:
+                try:
+                    prev_summary = None
+                    if slide_idx - 1 in all_narrations:
+                        prev_summary = all_narrations[slide_idx - 1][-300:]
+                    narration = await gemini_provider.generate_narration(
+                        slide=slides[slide_idx],
+                        global_plan=global_plan_dict,
+                        previous_narration_summary=prev_summary,
+                        related_slides=None,
+                    )
+                    all_narrations[slide_idx] = narration.strip()
+                    print(f"✅ Fallback narration generated for slide {slide_idx}")
+                except Exception as e:
+                    print(f"❌ Fallback failed for slide {slide_idx}: {e}")
         print(f"✅ Have narrations for {len(all_narrations)}/{len(slides)} slides")
 
         # Phase 5: Generate audio

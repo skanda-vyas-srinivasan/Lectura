@@ -315,7 +315,7 @@ Slides in section: {section_strategy['start_slide'] + 1} to {section_strategy['e
    - Outline slides: ~50-100 words (briefly list topics, don't elaborate)
    - Section headers: ~15-30 words (just transition: "Moving on to...")
    - Content slides: ~150-250 words (explain concepts in detail)
-9. **BE PROFESSIONAL AND CONCISE** - Don't add unnecessary fluff or embellishment
+9. **TEACH, DON'T RECITE** - explain intuition and meaning, do not read bullets verbatim
 10. **INCREMENTAL BUILDS**: If a slide is marked as "[INCREMENTAL BUILD]":
    - ONLY narrate the NEW content that just appeared
    - Keep it brief (~50-100 words)
@@ -378,6 +378,8 @@ Mark each slide's narration with "### SLIDE X ###" on its own line BEFORE that s
 NARRATION RULES:
 - NO instructor names, universities, or personal info
 - **EVERYTHING you say must be natural, speakable English** - as if you're talking to students in person
+- When possible, add a brief intuition, analogy, or micro-example (1-2 sentences) to make ideas clearer
+- Prefer simple explanations over formal definitions unless the slide explicitly defines something
 
 **CRITICAL: Convert ALL notation to natural speech. Examples:**
 - NEVER say "x underscore 1" → SAY "x one" or "x sub one"
@@ -422,13 +424,15 @@ Begin narrating now:
 """
 
         # Generate continuous narration (wrapped in thread to avoid blocking event loop)
+        # Scale max output tokens with section size to reduce truncation risk.
+        max_output_tokens = min(8000, 700 * max(1, len(section_slides)))
         import asyncio
         response = await asyncio.to_thread(
             self.model.generate_content,
             prompt,
             generation_config={
                 "temperature": 0.4,
-                "max_output_tokens": 4000,
+                "max_output_tokens": max_output_tokens,
             }
         )
 
@@ -440,10 +444,13 @@ Begin narrating now:
         # Parse response to extract individual slide narrations
         full_narration = response.text.strip()
 
-        # Split by slide markers
+        # Split by slide markers (tolerate slight formatting variance)
         import re
-        slide_pattern = r'### SLIDE (\d+) ###\s*\n(.*?)(?=### SLIDE \d+ ###|$)'
-        matches = re.findall(slide_pattern, full_narration, re.DOTALL)
+        slide_pattern = r'#{2,4}\s*SLIDE\s+(\d+)\s*#{2,4}\s*\n(.*?)(?=#{2,4}\s*SLIDE\s+\d+\s*#{2,4}\s*\n|$)'
+        matches = re.findall(slide_pattern, full_narration, re.DOTALL | re.IGNORECASE)
+        if not matches:
+            alt_pattern = r'(?:^|\n)\s*SLIDE\s+(\d+)\s*[:\-]*\s*\n?(.*?)(?=(?:\n\s*SLIDE\s+\d+)|$)'
+            matches = re.findall(alt_pattern, full_narration, re.DOTALL | re.IGNORECASE)
 
         # Build result dict
         narrations = {}
@@ -665,19 +672,21 @@ YOUR TASK:
 Generate natural, pedagogical narration for this slide as if you are lecturing live.
 
 REQUIREMENTS:
-1. Explain concepts, don't just read the slide
-2. Reference prior material when relevant
-3. Prepare students for what's coming next
-4. Be faithful to the slide's content - don't improvise unrelated material
-5. Don't repeat what was thoroughly covered in previous slides
-6. Use conversational academic language
-7. If there are diagrams, describe and explain them
+1. Explain concepts, do not just read the slide
+2. Add intuition: briefly say why this matters or how to think about it
+3. When helpful, give a micro-example or analogy (1-2 sentences)
+4. Reference prior material when relevant
+5. Prepare students for what's coming next
+6. Be faithful to the slide's content - don't improvise unrelated material
+7. Don't repeat what was thoroughly covered in previous slides
+8. Use conversational academic language
+9. If there are diagrams, describe and explain them
 
 CRITICAL - PRIVACY & TTS COMPATIBILITY:
-8. DO NOT mention specific instructor names, professor names, or teaching assistants
-9. DO NOT mention specific universities or institutions
-10. Keep narration generic and reusable (e.g., "Welcome to this course on Linear Optimization" NOT "Welcome to ISyE 525 at UW-Madison")
-11. Convert ALL mathematical notation to spoken form for text-to-speech:
+10. DO NOT mention specific instructor names, professor names, or teaching assistants
+11. DO NOT mention specific universities or institutions
+12. Keep narration generic and reusable (e.g., "Welcome to this course on Linear Optimization" NOT "Welcome to ISyE 525 at UW-Madison")
+13. Convert ALL mathematical notation to spoken form for text-to-speech:
     - LaTeX like \\mathbb{{R}}^n → "n-dimensional real space" or "R to the power of n"
     - Symbols like \\max → "maximize", \\min → "minimize"
     - c^T x → "c transpose times x"
