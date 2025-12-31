@@ -418,6 +418,47 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                     print(f"❌ Fallback failed for slide {slide_idx}: {e}")
         print(f"✅ Have narrations for {len(all_narrations)}/{len(slides)} slides")
 
+        # Detect truncated or suspiciously short narrations and regenerate those slides.
+        def is_incomplete_narration(slide_idx: int, text: str) -> bool:
+            if not text:
+                return True
+            slide = slides[slide_idx]
+            words = text.split()
+            word_count = len(words)
+            ends_with_punct = text.rstrip().endswith(('.', '!', '?'))
+            has_substantial_content = bool(slide.body_text and len(slide.body_text.strip()) > 80)
+            is_title_like = slide.slide_type.value in {"title", "section_header"}
+            if is_title_like:
+                return word_count < 15 and has_substantial_content
+            if has_substantial_content and word_count < 60:
+                return True
+            if word_count > 20 and not ends_with_punct:
+                return True
+            return False
+
+        incomplete_slides = [
+            i for i, narration in all_narrations.items()
+            if i < len(slides) and is_incomplete_narration(i, narration)
+        ]
+        if incomplete_slides:
+            print(f"⚠️  Incomplete narrations detected for slides: {sorted(incomplete_slides)}")
+            print("🔁 Regenerating incomplete narrations individually...")
+            for slide_idx in sorted(incomplete_slides):
+                try:
+                    prev_summary = None
+                    if slide_idx - 1 in all_narrations:
+                        prev_summary = all_narrations[slide_idx - 1][-300:]
+                    narration = await gemini_provider.generate_narration(
+                        slide=slides[slide_idx],
+                        global_plan=global_plan_dict,
+                        previous_narration_summary=prev_summary,
+                        related_slides=None,
+                    )
+                    all_narrations[slide_idx] = narration.strip()
+                    print(f"✅ Regenerated narration for slide {slide_idx}")
+                except Exception as e:
+                    print(f"❌ Regenerate failed for slide {slide_idx}: {e}")
+
         # Phase 5: Generate audio
         sessions[session_id]["status"] = {
             "phase": "generating_audio",
