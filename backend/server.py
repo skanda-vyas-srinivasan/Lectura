@@ -76,6 +76,24 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all incoming requests with real client IP."""
+    # Get real client IP (handles proxies/load balancers)
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    else:
+        client_ip = request.headers.get("X-Real-IP", request.client.host)
+
+    # Log the access
+    print(f"🌐 ACCESS: {client_ip} → {request.method} {request.url.path}")
+
+    # Process the request
+    response = await call_next(request)
+    return response
+
+
 @app.on_event("startup")
 async def startup_event():
     """Load sessions from disk on startup."""
