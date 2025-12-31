@@ -125,6 +125,8 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
         enable_vision: Whether to enable vision analysis for diagrams/tables (default: False)
         tts_provider: TTS provider - "edge" (free, robotic) or "polly" (free tier, better quality)
     """
+    print(f"📤 UPLOAD STARTED: {file.filename}, origin: {request.headers.get('origin')}")
+
     # Get client IP
     client_ip = request.client.host
 
@@ -164,11 +166,12 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     }
 
     # Save initial session to disk
-    save_session(session_id)
+    await asyncio.to_thread(save_session, session_id)
 
     # Start processing in background
     asyncio.create_task(process_lecture(session_id, str(temp_file), enable_vision, tts_provider, polly_voice))
 
+    print(f"✅ UPLOAD COMPLETE - returning session_id: {session_id}")
     return {"session_id": session_id}
 
 
@@ -200,7 +203,8 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         }
 
         parser = PDFParser()
-        slides = parser.parse(pdf_path)
+        # Run blocking PDF parsing in thread pool to avoid blocking event loop
+        slides = await asyncio.to_thread(parser.parse, pdf_path)
 
         # Limit to 150 slides for cost protection
         if len(slides) > 150:
@@ -210,7 +214,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                 "message": f"Presentation has {len(slides)} slides. Maximum allowed is 150 slides.",
                 "complete": False
             }
-            save_session(session_id)
+            await asyncio.to_thread(save_session, session_id)
             return
 
         sessions[session_id]["total_slides"] = len(slides)
@@ -228,20 +232,26 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         output_dir = Path("output") / session_id
         output_slides_dir = output_dir / "slides"
         output_audio_dir = output_dir / "audio"
-        output_slides_dir.mkdir(parents=True, exist_ok=True)
-        output_audio_dir.mkdir(parents=True, exist_ok=True)
 
-        doc = fitz.open(pdf_path)
-        zoom = 150 / 72.0
-        mat = fitz.Matrix(zoom, zoom)
+        # Run blocking mkdir operations in thread pool
+        await asyncio.to_thread(output_slides_dir.mkdir, parents=True, exist_ok=True)
+        await asyncio.to_thread(output_audio_dir.mkdir, parents=True, exist_ok=True)
 
-        for page_num in range(len(slides)):
-            page = doc[page_num]
-            pix = page.get_pixmap(matrix=mat)
-            output_file = output_slides_dir / f"slide_{page_num:03d}.png"
-            pix.save(output_file)
+        # Extract images in thread pool to avoid blocking
+        def extract_slide_images():
+            doc = fitz.open(pdf_path)
+            zoom = 150 / 72.0
+            mat = fitz.Matrix(zoom, zoom)
 
-        doc.close()
+            for page_num in range(len(slides)):
+                page = doc[page_num]
+                pix = page.get_pixmap(matrix=mat)
+                output_file = output_slides_dir / f"slide_{page_num:03d}.png"
+                pix.save(output_file)
+
+            doc.close()
+
+        await asyncio.to_thread(extract_slide_images)
 
         # Phase 3: Build global context
         sessions[session_id]["status"] = {
@@ -277,7 +287,8 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                 print(f"   📝 Falling back to text-only analysis")
                 visual = {"key_diagrams": []}
 
-        global_plan = context_builder._synthesize_plan(slides, structural, visual)
+        # Run synthesis in thread pool (might be CPU-intensive)
+        global_plan = await asyncio.to_thread(context_builder._synthesize_plan, slides, structural, visual)
         section_strategies = await context_builder._build_section_strategies(slides, global_plan)
         global_plan.section_narration_strategies = section_strategies
 
@@ -455,7 +466,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         }
 
         # Save completed session to disk
-        save_session(session_id)
+        await asyncio.to_thread(save_session, session_id)
 
     except Exception as e:
         sessions[session_id]["status"] = {
@@ -469,7 +480,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         traceback.print_exc()
 
         # Save failed session to disk
-        save_session(session_id)
+        await asyncio.to_thread(save_session, session_id)
 
 
 @app.get("/api/v1/sessions")
