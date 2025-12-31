@@ -127,8 +127,14 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     """
     print(f"📤 UPLOAD STARTED: {file.filename}, origin: {request.headers.get('origin')}")
 
-    # Get client IP
-    client_ip = request.client.host
+    # Get client IP (handle proxies/load balancers)
+    # X-Forwarded-For contains chain of IPs, first one is the real client
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+    else:
+        # Fallback to X-Real-IP header
+        client_ip = request.headers.get("X-Real-IP", request.client.host)
 
     # Check rate limit (5 lectures per 24 hours)
     if not check_rate_limit(client_ip, max_requests=5, window_hours=24):
