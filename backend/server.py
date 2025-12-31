@@ -187,7 +187,6 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
     from app.services.parsers import PDFParser
     from app.services.ai import GeminiProvider
     from app.services.global_context_builder import GlobalContextBuilder
-    from app.services.tts import GoogleTTSProvider
     from app.config import settings
     import fitz
 
