@@ -57,7 +57,9 @@ allowed_origins = [
     "http://localhost:3000",  # Local development
     "https://lectura-b14z.vercel.app",  # Vercel deployment
     "https://lectura.ink",  # Custom domain
+    "https://www.lectura.ink",  # Custom domain with www
     "http://lectura.ink",   # HTTP version
+    "http://www.lectura.ink",   # HTTP version with www
 ]
 
 # Add custom frontend URL from settings if set
