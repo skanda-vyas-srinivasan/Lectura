@@ -30,8 +30,11 @@ export default function LectureViewer() {
   const [currentSubtitle, setCurrentSubtitle] = useState('')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showControls, setShowControls] = useState(true)
+  const [audioLoading, setAudioLoading] = useState(false)
+  const [audioError, setAudioError] = useState<string | null>(null)
 
   const audioRef = useRef<HTMLAudioElement>(null)
+  const prefetchAudioRef = useRef<HTMLAudioElement | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const hideControlsTimeout = useRef<NodeJS.Timeout | null>(null)
 
@@ -51,21 +54,43 @@ export default function LectureViewer() {
 
   useEffect(() => {
     if (audioRef.current && lectureData) {
+      setAudioLoading(true)
+      setAudioError(null)
       audioRef.current.src = `${API_URL}/api/v1/session/${sessionId}/audio/${currentSlide}`
+      audioRef.current.load()
       if (isPlaying) {
-        audioRef.current.play()
+        audioRef.current.play().catch(() => {
+          setIsPlaying(false)
+        })
       }
     }
+  }, [currentSlide, sessionId, lectureData])
+
+  useEffect(() => {
+    if (!lectureData) return
+    const nextSlide = currentSlide + 1
+    if (nextSlide >= lectureData.total_slides) return
+
+    const nextAudio = new Audio(`${API_URL}/api/v1/session/${sessionId}/audio/${nextSlide}`)
+    nextAudio.preload = 'auto'
+    nextAudio.load()
+    prefetchAudioRef.current = nextAudio
   }, [currentSlide, sessionId, lectureData])
 
   const togglePlayPause = () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause()
+        setIsPlaying(false)
       } else {
-        audioRef.current.play()
+        setAudioLoading(true)
+        audioRef.current.play().then(() => {
+          setIsPlaying(true)
+        }).catch(() => {
+          setIsPlaying(false)
+          setAudioLoading(false)
+        })
       }
-      setIsPlaying(!isPlaying)
     }
   }
 
@@ -204,6 +229,30 @@ export default function LectureViewer() {
     }
   }
 
+  const handleAudioLoadStart = () => {
+    setAudioLoading(true)
+    setAudioError(null)
+  }
+
+  const handleAudioWaiting = () => {
+    setAudioLoading(true)
+  }
+
+  const handleAudioCanPlay = () => {
+    setAudioLoading(false)
+  }
+
+  const handleAudioPlaying = () => {
+    setAudioLoading(false)
+    setAudioError(null)
+  }
+
+  const handleAudioError = () => {
+    setAudioLoading(false)
+    setIsPlaying(false)
+    setAudioError('Audio failed to load. Please try again.')
+  }
+
   if (!lectureData) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
@@ -274,6 +323,23 @@ export default function LectureViewer() {
                   alt={`Slide ${currentSlide + 1}`}
                   className="w-full h-full object-contain"
                 />
+
+                {(audioLoading || audioError) && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                    <div className="flex items-center space-x-3 bg-black/60 border border-white/10 rounded-xl px-5 py-3">
+                      {audioError ? (
+                        <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      ) : (
+                        <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin"></div>
+                      )}
+                      <span className="text-sm text-gray-200">
+                        {audioError ? audioError : 'Loading audio...'}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Subtitles - overlay inside slide */}
                 {isPlaying && currentSubtitle && (
@@ -433,6 +499,12 @@ export default function LectureViewer() {
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleAudioEnded}
         onLoadedMetadata={handleTimeUpdate}
+        onLoadStart={handleAudioLoadStart}
+        onWaiting={handleAudioWaiting}
+        onCanPlay={handleAudioCanPlay}
+        onCanPlayThrough={handleAudioCanPlay}
+        onPlaying={handleAudioPlaying}
+        onError={handleAudioError}
       />
     </div>
   )
