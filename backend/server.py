@@ -377,11 +377,20 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                         import traceback
                         traceback.print_exc()
 
-        # Check for missing narrations
-        missing_slides = [i for i in range(len(slides)) if i not in all_narrations]
-        if missing_slides:
-            print(f"⚠️  Missing narrations for {len(missing_slides)} slides: {missing_slides}")
-        print(f"✅ Have narrations for {len(all_narrations)}/{len(slides)} slides")
+        # Check for missing narrations - FAIL if any are missing
+        missing_narrations = [i for i in range(len(slides)) if i not in all_narrations]
+        if missing_narrations:
+            error_msg = f"Failed to generate narrations for {len(missing_narrations)} slides: {missing_narrations[:10]}"
+            print(f"❌ {error_msg}")
+            sessions[session_id]["status"] = {
+                "phase": "error",
+                "progress": 0,
+                "message": error_msg,
+                "complete": False
+            }
+            await asyncio.to_thread(save_session, session_id)
+            return
+        print(f"✅ Have narrations for all {len(slides)} slides")
 
         # Phase 5: Generate audio
         sessions[session_id]["status"] = {
@@ -445,6 +454,23 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                 all_timings[slide_idx] = timing_data["timings"]
             except Exception as e:
                 print(f"❌ Failed to generate audio for slide {slide_idx}: {e}")
+                import traceback
+                traceback.print_exc()
+
+        # Check for missing audio - FAIL if any are missing
+        missing_audio = [i for i in sorted(all_narrations.keys()) if i not in all_timings]
+        if missing_audio:
+            error_msg = f"Failed to generate audio for {len(missing_audio)} slides: {missing_audio[:10]}"
+            print(f"❌ {error_msg}")
+            sessions[session_id]["status"] = {
+                "phase": "error",
+                "progress": 0,
+                "message": error_msg,
+                "complete": False
+            }
+            await asyncio.to_thread(save_session, session_id)
+            return
+        print(f"✅ Generated audio for all {len(all_timings)} slides")
 
         # Phase 6: Store lecture data
         sessions[session_id]["status"] = {
