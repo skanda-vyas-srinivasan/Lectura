@@ -321,6 +321,8 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                     )
                     all_narrations.update(section_narrations)
                     print(f"✅ Generated narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}")
+                    # Yield control to event loop so other requests can be processed
+                    await asyncio.sleep(0)
                 except Exception as e:
                     print(f"❌ Failed to generate narrations for slides {section_strategy.start_slide}-{section_strategy.end_slide}: {e}")
                     import traceback
@@ -361,6 +363,8 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                         )
                         all_narrations.update(chunk_narrations)
                         print(f"✅ Generated chunk: slides {chunk_strategy['start_slide']}-{chunk_strategy['end_slide']}")
+                        # Yield control to event loop so other requests can be processed
+                        await asyncio.sleep(0)
                     except Exception as e:
                         print(f"❌ Failed chunk {chunk_strategy['start_slide']}-{chunk_strategy['end_slide']}: {e}")
                         import traceback
