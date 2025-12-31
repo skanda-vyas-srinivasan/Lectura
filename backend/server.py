@@ -145,9 +145,8 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     temp_file = Path(f"/tmp/{session_id}_{file.filename}")
 
     # Save uploaded file
-    with open(temp_file, "wb") as f:
-        content = await file.read()
-        f.write(content)
+    content = await file.read()
+    await asyncio.to_thread(lambda: temp_file.write_bytes(content))
 
     # Initialize session
     sessions[session_id] = {
@@ -534,7 +533,7 @@ async def get_slide(session_id: str, slide_index: int):
 
     slide_file = Path("output") / session_id / "slides" / f"slide_{slide_index:03d}.png"
 
-    if not slide_file.exists():
+    if not await asyncio.to_thread(slide_file.exists):
         raise HTTPException(status_code=404, detail="Slide not found")
 
     return FileResponse(slide_file, media_type="image/png")
@@ -548,7 +547,7 @@ async def get_audio(session_id: str, slide_index: int):
 
     audio_file = Path("output") / session_id / "audio" / f"slide_{slide_index:03d}.mp3"
 
-    if not audio_file.exists():
+    if not await asyncio.to_thread(audio_file.exists):
         raise HTTPException(status_code=404, detail="Audio not found")
 
     return FileResponse(audio_file, media_type="audio/mpeg")
