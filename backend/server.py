@@ -597,4 +597,6 @@ async def test_tts(text: str = "Hello, this is a test of the text to speech syst
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, workers=4)
+    # Use 1 worker since sessions dict is in-memory and not shared across workers
+    # Rely on asyncio.to_thread() for concurrency instead
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, workers=1)
