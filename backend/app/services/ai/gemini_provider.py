@@ -476,8 +476,10 @@ Begin narrating now:
             slide, global_plan, previous_narration_summary, related_slides
         )
 
-        # Call Gemini
-        response = self.model.generate_content(
+        # Call Gemini (wrapped in thread to avoid blocking event loop)
+        import asyncio
+        response = await asyncio.to_thread(
+            self.model.generate_content,
             prompt,
             generation_config={
                 "temperature": 0.3,  # Slightly higher for natural language
