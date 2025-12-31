@@ -378,8 +378,10 @@ Mark each slide's narration with "### SLIDE X ###" on its own line BEFORE that s
 NARRATION RULES:
 - NO instructor names, universities, or personal info
 - **EVERYTHING you say must be natural, speakable English** - as if you're talking to students in person
-- When possible, add a brief intuition, analogy, or micro-example (1-2 sentences) to make ideas clearer
+- Use lecturer cadence and guided attention: "Notice that...", "Let's pause here...", "Focus on...", "Here's the key idea..."
+- Add a brief intuition, analogy, or micro-example (1-2 sentences) to make ideas clearer
 - Prefer simple explanations over formal definitions unless the slide explicitly defines something
+- Light check-ins are welcome: "Does that make sense?" or "If that feels abstract, keep this example in mind."
 
 **CRITICAL: Convert ALL notation to natural speech. Examples:**
 - NEVER say "x underscore 1" → SAY "x one" or "x sub one"
@@ -708,12 +710,14 @@ REQUIREMENTS:
 7. Don't repeat what was thoroughly covered in previous slides
 8. Use conversational academic language
 9. If there are diagrams, describe and explain them
+10. Use lecturer cadence and guided attention: "Notice that...", "Let's pause here...", "Focus on...", "Here's the key idea..."
+11. Include a light check-in when appropriate: "Does that make sense?" or "If that feels abstract, keep this example in mind."
 
 CRITICAL - PRIVACY & TTS COMPATIBILITY:
-10. DO NOT mention specific instructor names, professor names, or teaching assistants
-11. DO NOT mention specific universities or institutions
-12. Keep narration generic and reusable (e.g., "Welcome to this course on Linear Optimization" NOT "Welcome to ISyE 525 at UW-Madison")
-13. Convert ALL mathematical notation to spoken form for text-to-speech:
+12. DO NOT mention specific instructor names, professor names, or teaching assistants
+13. DO NOT mention specific universities or institutions
+14. Keep narration generic and reusable (e.g., "Welcome to this course on Linear Optimization" NOT "Welcome to ISyE 525 at UW-Madison")
+15. Convert ALL mathematical notation to spoken form for text-to-speech:
     - LaTeX like \\mathbb{{R}}^n → "n-dimensional real space" or "R to the power of n"
     - Symbols like \\max → "maximize", \\min → "minimize"
     - c^T x → "c transpose times x"
