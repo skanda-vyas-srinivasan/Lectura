@@ -148,6 +148,17 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     content = await file.read()
     await asyncio.to_thread(lambda: temp_file.write_bytes(content))
 
+    # Check slide count BEFORE processing (reject early)
+    import fitz
+    slide_count = await asyncio.to_thread(lambda: len(fitz.open(str(temp_file))))
+    if slide_count > 150:
+        # Clean up temp file
+        await asyncio.to_thread(temp_file.unlink, missing_ok=True)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Presentation has {slide_count} slides. Maximum allowed is 150 slides."
+        )
+
     # Initialize session
     sessions[session_id] = {
         "id": session_id,
@@ -205,17 +216,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         # Run blocking PDF parsing in thread pool to avoid blocking event loop
         slides = await asyncio.to_thread(parser.parse, pdf_path)
 
-        # Limit to 150 slides for cost protection
-        if len(slides) > 150:
-            sessions[session_id]["status"] = {
-                "phase": "error",
-                "progress": 0,
-                "message": f"Presentation has {len(slides)} slides. Maximum allowed is 150 slides.",
-                "complete": False
-            }
-            await asyncio.to_thread(save_session, session_id)
-            return
-
+        # Slide count already validated at upload time, just set it
         sessions[session_id]["total_slides"] = len(slides)
         sessions[session_id]["status"]["total_slides"] = len(slides)
 
