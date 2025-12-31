@@ -157,12 +157,12 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     # Check slide count BEFORE processing (reject early)
     import fitz
     slide_count = await asyncio.to_thread(lambda: len(fitz.open(str(temp_file))))
-    if slide_count > 150:
+    if slide_count > 50:
         # Clean up temp file
         await asyncio.to_thread(temp_file.unlink, missing_ok=True)
         raise HTTPException(
             status_code=400,
-            detail=f"Presentation has {slide_count} slides. Maximum allowed is 150 slides."
+            detail=f"Presentation has {slide_count} slides. Maximum allowed is 50 slides."
         )
 
     # Initialize session
