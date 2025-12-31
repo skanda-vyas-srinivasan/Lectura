@@ -70,8 +70,10 @@ class GeminiProvider(AIProvider):
         # Create the analysis prompt
         prompt = self._build_structural_prompt(deck_text, len(slides))
 
-        # Call Gemini
-        response = self.model.generate_content(
+        # Call Gemini (wrapped in thread to avoid blocking event loop)
+        import asyncio
+        response = await asyncio.to_thread(
+            self.model.generate_content,
             prompt,
             generation_config={
                 "temperature": 0.1,  # Low for analytical tasks
@@ -159,8 +161,10 @@ class GeminiProvider(AIProvider):
                     "data": image_bytes
                 })
 
-        # Call Gemini with vision
-        response = self.model.generate_content(
+        # Call Gemini with vision (wrapped in thread to avoid blocking event loop)
+        import asyncio
+        response = await asyncio.to_thread(
+            self.model.generate_content,
             content_parts,
             generation_config={
                 "temperature": 0.1,
@@ -243,8 +247,9 @@ Return a JSON object with:
 Return ONLY valid JSON, no other text.
 """
 
-        # Call Gemini
-        response = self.model.generate_content(prompt)
+        # Call Gemini (wrapped in thread to avoid blocking event loop)
+        import asyncio
+        response = await asyncio.to_thread(self.model.generate_content, prompt)
 
         # Track tokens
         if hasattr(response, 'usage_metadata'):
@@ -416,8 +421,10 @@ Think: "How would I say this out loud to a student sitting across from me?"
 Begin narrating now:
 """
 
-        # Generate continuous narration
-        response = self.model.generate_content(
+        # Generate continuous narration (wrapped in thread to avoid blocking event loop)
+        import asyncio
+        response = await asyncio.to_thread(
+            self.model.generate_content,
             prompt,
             generation_config={
                 "temperature": 0.4,
