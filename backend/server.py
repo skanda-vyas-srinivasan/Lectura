@@ -320,6 +320,8 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     task = asyncio.create_task(process_lecture(session_id, str(temp_file), enable_vision, tts_provider, polly_voice))
     processing_tasks[session_id] = task
 
+    download_url = f"{request.base_url}api/v1/session/{session_id}/file"
+    print(f"📎 DOWNLOAD LINK: {download_url}")
     print(f"✅ UPLOAD COMPLETE - returning session_id: {session_id}")
     return {"session_id": session_id}
 
@@ -930,6 +932,24 @@ async def get_audio(session_id: str, slide_index: int):
         raise HTTPException(status_code=404, detail="Audio not found")
 
     return FileResponse(audio_file, media_type="audio/mpeg")
+
+
+@app.get("/api/v1/session/{session_id}/file")
+async def get_uploaded_file(session_id: str):
+    """Download the original uploaded file."""
+    if session_id not in sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    temp_file = sessions[session_id].get("temp_file")
+    if not temp_file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_path = Path(temp_file)
+    if not await asyncio.to_thread(file_path.exists):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    filename = sessions[session_id].get("filename") or file_path.name
+    return FileResponse(file_path, media_type="application/octet-stream", filename=filename)
 
 
 @app.post("/api/v1/test-tts")
