@@ -1,7 +1,10 @@
 """AWS Polly TTS provider with neural voices."""
 import boto3
 import os
+import re
 from typing import Dict, Any
+from xml.sax.saxutils import escape
+from botocore.exceptions import ClientError
 
 
 class PollyTTSProvider:
@@ -47,13 +50,65 @@ class PollyTTSProvider:
         Returns:
             Dictionary with timing information
         """
+        def to_ssml(raw_text: str) -> str:
+            sentence_pattern = re.compile(r'[^.!?]+[.!?]|[^.!?]+$')
+            sentences = [s.strip() for s in sentence_pattern.findall(raw_text) if s.strip()]
+            ssml_sentences = []
+
+            for sentence in sentences:
+                escaped = escape(sentence, {'"': '&quot;'})
+                escaped = re.sub(r'(?<!\d),(?!\d)', r',<break time="100ms"/>', escaped)
+                escaped = re.sub(r';', r';<break time="140ms"/>', escaped)
+                escaped = re.sub(r':', r':<break time="140ms"/>', escaped)
+
+                rate = "102%"
+                if re.search(
+                    r'\b(equals|equal|less than|greater than|sum|integral|derivative|matrix|vector|transpose|squared|cubed|to the|over|divided by)\b',
+                    sentence,
+                    re.IGNORECASE
+                ):
+                    rate = "92%"
+
+                ssml_sentences.append(
+                    f"<s><prosody rate='{rate}'>{escaped}</prosody></s>"
+                )
+
+            body = " <break time='200ms'/> ".join(ssml_sentences)
+            return f"<speak>{body}</speak>"
+
+        def to_simple_ssml(raw_text: str) -> str:
+            escaped = escape(raw_text, {'"': '&quot;'})
+            return f"<speak>{escaped}</speak>"
+
+        ssml = to_ssml(text)
+        text_type = "ssml"
+        engine = self.engine
+
         # Generate audio
-        audio_response = self.client.synthesize_speech(
-            Text=text,
-            OutputFormat='mp3',
-            VoiceId=self.voice_id,
-            Engine=self.engine
-        )
+        try:
+            audio_response = self.client.synthesize_speech(
+                Text=ssml,
+                TextType=text_type,
+                OutputFormat='mp3',
+                VoiceId=self.voice_id,
+                Engine=engine
+            )
+        except ClientError as exc:
+            error_message = str(exc)
+            if "InvalidSsmlException" in error_message or "Unsupported Neural feature" in error_message:
+                ssml = to_simple_ssml(text)
+                text_type = "ssml"
+                if engine == "neural":
+                    engine = "standard"
+                audio_response = self.client.synthesize_speech(
+                    Text=ssml,
+                    TextType=text_type,
+                    OutputFormat='mp3',
+                    VoiceId=self.voice_id,
+                    Engine=engine
+                )
+            else:
+                raise
 
         # Save audio stream to file
         with open(output_path, 'wb') as f:
@@ -61,10 +116,11 @@ class PollyTTSProvider:
 
         # Get speech marks for word-level timing
         marks_response = self.client.synthesize_speech(
-            Text=text,
+            Text=ssml,
+            TextType=text_type,
             OutputFormat='json',
             VoiceId=self.voice_id,
-            Engine=self.engine,
+            Engine=engine,
             SpeechMarkTypes=['sentence']  # Get sentence boundaries
         )
 

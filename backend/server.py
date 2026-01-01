@@ -78,20 +78,8 @@ app.add_middleware(
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    """Log all incoming requests with real client IP."""
-    # Get real client IP (handles proxies/load balancers)
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        client_ip = forwarded_for.split(",")[0].strip()
-    else:
-        client_ip = request.headers.get("X-Real-IP", request.client.host)
-
-    # Log the access
-    print(f"🌐 ACCESS: {client_ip} → {request.method} {request.url.path}")
-
-    # Process the request
-    response = await call_next(request)
-    return response
+    """Access logging disabled."""
+    return await call_next(request)
 
 
 @app.on_event("startup")
@@ -468,6 +456,64 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
             "total_slides": len(slides)
         }
 
+        def normalize_math_speech(text: str) -> str:
+            """Aggressively normalize math notation into spoken form."""
+            import re
+
+            digit_map = {
+                "0": "zero",
+                "1": "one",
+                "2": "two",
+                "3": "three",
+                "4": "four",
+                "5": "five",
+                "6": "six",
+                "7": "seven",
+                "8": "eight",
+                "9": "nine",
+            }
+
+            def speak_token(token: str) -> str:
+                if token in digit_map:
+                    return digit_map[token]
+                return token
+
+            def replace_power(base: str, exp: str) -> str:
+                exp_spoken = speak_token(exp)
+                if exp == "2":
+                    return f"{base} squared"
+                if exp == "3":
+                    return f"{base} cubed"
+                return f"{base} to the {exp_spoken}"
+
+            s = text
+            # LaTeX-style subscripts: x_{k} -> x k
+            s = re.sub(r'([A-Za-z])\s*_\s*\{?\s*([A-Za-z0-9]+)\s*\}?', r'\1 \2', s)
+            # Worded subscripts: x sub k -> x k
+            s = re.sub(
+                r'\b([A-Za-z])\s*(?:sub(?:script)?|underscore)\s*([A-Za-z0-9]+)\b',
+                lambda m: f"{m.group(1)} {speak_token(m.group(2))}",
+                s,
+                flags=re.IGNORECASE,
+            )
+            # Underscore shorthand: x_k -> x k
+            s = re.sub(r'\b([A-Za-z])_([A-Za-z0-9]+)\b', r'\1 \2', s)
+            # Worded superscripts: x superscript 2 -> x squared
+            s = re.sub(
+                r'\b([A-Za-z0-9]+)\s*(?:super(?:script)?|superscript)\s*([A-Za-z0-9]+)\b',
+                lambda m: replace_power(m.group(1), m.group(2)),
+                s,
+                flags=re.IGNORECASE,
+            )
+            # Caret power: x^2 or x caret 2
+            s = re.sub(
+                r'\b([A-Za-z0-9]+)\s*(?:\^|caret)\s*([A-Za-z0-9]+)\b',
+                lambda m: replace_power(m.group(1), m.group(2)),
+                s,
+                flags=re.IGNORECASE,
+            )
+            return s
+
         # Initialize TTS provider
         print(f"🎤 Initializing TTS provider: {tts_provider}")
         try:
@@ -505,7 +551,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                 try:
                     # Clean narration for TTS (remove all markdown and symbols)
                     import re
-                    clean_narration = narration_text
+                    clean_narration = normalize_math_speech(narration_text)
                     # Remove backticks
                     clean_narration = clean_narration.replace("`", "")
                     # Remove asterisks (bold/italic markdown)

@@ -2,6 +2,8 @@
 import asyncio
 from pathlib import Path
 import edge_tts
+import re
+from xml.sax.saxutils import escape
 
 from app.services.tts.base import TTSProvider
 
@@ -34,6 +36,61 @@ class EdgeTTSProvider(TTSProvider):
         """
         self.voice = voice
 
+    def _to_ssml(self, text: str) -> str:
+        """Convert plain text into SSML with more natural pacing and emphasis."""
+        sentence_pattern = re.compile(r'[^.!?]+[.!?]|[^.!?]+$')
+        sentences = [s.strip() for s in sentence_pattern.findall(text) if s.strip()]
+        ssml_sentences = []
+
+        def contour(escaped_sentence: str) -> str:
+            # Add a gentle pitch contour: lift then drop.
+            parts = re.split(r'([,;:])', escaped_sentence, maxsplit=1)
+            if len(parts) >= 3:
+                head = parts[0] + parts[1]
+                tail = parts[2]
+                return (
+                    f"<prosody pitch='+2%'>{head}</prosody>"
+                    f"<prosody pitch='-1%'>{tail}</prosody>"
+                )
+            mid = len(escaped_sentence) // 2
+            return (
+                f"<prosody pitch='+2%'>{escaped_sentence[:mid]}</prosody>"
+                f"<prosody pitch='-1%'>{escaped_sentence[mid:]}</prosody>"
+            )
+
+        for sentence in sentences:
+            escaped = escape(sentence, {'"': '&quot;'})
+            # Emphasize quoted terms.
+            escaped = re.sub(
+                r'&quot;([^&]+?)&quot;',
+                r'<emphasis level="moderate">\1</emphasis>',
+                escaped
+            )
+            # Emphasize all-caps terms (acronyms, key terms).
+            escaped = re.sub(
+                r'\b([A-Z]{3,})\b',
+                r'<emphasis level="moderate">\1</emphasis>',
+                escaped
+            )
+            # Short pauses after commas/semicolons/colons (avoid 1,000).
+            escaped = re.sub(r'(?<!\d),(?!\d)', r',<break time="100ms"/>', escaped)
+            escaped = re.sub(r';', r';<break time="140ms"/>', escaped)
+            escaped = re.sub(r':', r':<break time="140ms"/>', escaped)
+
+            # Slow down math-heavy sentences slightly.
+            if re.search(
+                r'\b(equals|equal|less than|greater than|sum|integral|derivative|matrix|vector|transpose|squared|cubed|to the|over|divided by)\b',
+                sentence,
+                re.IGNORECASE
+            ):
+                escaped = f"<prosody rate='92%'>{escaped}</prosody>"
+
+            escaped = contour(escaped)
+            ssml_sentences.append(f"<s>{escaped}</s>")
+
+        body = " <break time='200ms'/> ".join(ssml_sentences)
+        return f"<speak><prosody rate='102%' pitch='+1%'>{body}</prosody></speak>"
+
     async def generate_audio(
         self,
         text: str,
@@ -58,7 +115,8 @@ class EdgeTTSProvider(TTSProvider):
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Generate audio with word timing using SubMaker
-        communicate = edge_tts.Communicate(text, voice_to_use)
+        ssml = self._to_ssml(text)
+        communicate = edge_tts.Communicate(ssml, voice_to_use)
         submaker = edge_tts.SubMaker()
 
         with open(str(output_path), "wb") as audio_file:

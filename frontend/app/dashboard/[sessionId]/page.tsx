@@ -96,17 +96,12 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white rounded-2xl p-8 border border-slate-200 text-slate-900 shadow-sm">
-          {/* Current phase indicator */}
+          {/* Current phase text */}
           <div className="mb-8 text-center">
-            <div className="inline-flex items-center space-x-3 bg-sky-50 px-5 py-2.5 rounded-full border border-sky-200">
-              {!status.complete && (
-                <div className="w-2 h-2 bg-sky-500 rounded-full animate-pulse"></div>
-              )}
-              <span className="text-sm font-semibold text-sky-700">
-                {getPhaseLabel(status.phase)}
-              </span>
-            </div>
-            <p className="text-slate-600 mt-4 text-sm">{status.message}</p>
+            <p className="text-sm font-semibold text-slate-900">
+              {getPhaseLabel(status.phase)}
+            </p>
+            <p className="text-slate-600 mt-3 text-sm">{status.message}</p>
             {status.total_slides && (
               <p className="text-xs text-slate-500 mt-2">
                 Total slides: {status.total_slides}
@@ -137,16 +132,16 @@ export default function Dashboard() {
                 <div
                   key={phase}
                   className={`flex items-center justify-between px-4 py-2 rounded-lg transition-colors ${
-                    isCurrent ? 'bg-sky-50 border border-sky-200' : 'bg-slate-50'
+                    isCurrent ? 'bg-slate-50 border border-slate-200' : 'bg-slate-50'
                   }`}
                 >
-                  <span className={`text-sm ${isComplete ? 'text-emerald-600' : isCurrent ? 'text-sky-700 font-semibold' : 'text-slate-600'}`}>
+                  <span className={`text-sm ${isComplete ? 'text-emerald-600' : isCurrent ? 'text-slate-900 font-semibold' : 'text-slate-600'}`}>
                     {getPhaseLabel(phase)}
                   </span>
                   {isComplete ? (
                     <span className="text-xs text-emerald-600">Done</span>
                   ) : isCurrent ? (
-                    <span className="text-xs text-sky-600">In progress</span>
+                    <span className="text-xs text-slate-500">In progress</span>
                   ) : (
                     <span className="text-xs text-slate-400">Queued</span>
                   )}

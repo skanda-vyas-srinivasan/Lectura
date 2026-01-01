@@ -4,6 +4,7 @@ This service orchestrates the complete analysis of a lecture deck,
 building a comprehensive understanding before any narration is generated.
 """
 import asyncio
+import time
 from typing import List, Dict, Any, Optional
 from app.models import (
     SlideContent,
@@ -58,11 +59,22 @@ class GlobalContextBuilder:
         if not slides:
             raise ValueError("Cannot build context from empty slide list")
 
+        total_slides = len(slides)
+        total_images = sum(len(slide.images) for slide in slides)
+        print(f"🧠 ContextBuilder: start | slides={total_slides} images={total_images}")
+        start_time = time.monotonic()
+
         # Stage 1: Structural Analysis (70% of work)
         if progress_callback:
             progress_callback("structural_analysis", 0.0)
 
+        stage_start = time.monotonic()
+        print("🧠 ContextBuilder: structural_analysis start")
         structural_analysis = await self.ai_provider.analyze_structure(slides)
+        print(
+            "🧠 ContextBuilder: structural_analysis done "
+            f"({time.monotonic() - stage_start:.2f}s)"
+        )
 
         if progress_callback:
             progress_callback("structural_analysis", 1.0)
@@ -79,7 +91,15 @@ class GlobalContextBuilder:
         # Run vision analysis if there are images
         visual_analysis = {}
         if all_images:
+            stage_start = time.monotonic()
+            print(f"🧠 ContextBuilder: visual_analysis start | images={len(all_images)}")
             visual_analysis = await self.ai_provider.analyze_images(all_images, slides)
+            print(
+                "🧠 ContextBuilder: visual_analysis done "
+                f"({time.monotonic() - stage_start:.2f}s)"
+            )
+        else:
+            print("🧠 ContextBuilder: visual_analysis skipped (no images)")
 
         if progress_callback:
             progress_callback("visual_analysis", 1.0)
@@ -88,7 +108,13 @@ class GlobalContextBuilder:
         if progress_callback:
             progress_callback("synthesis", 0.0)
 
+        stage_start = time.monotonic()
+        print("🧠 ContextBuilder: synthesis start")
         global_plan = self._synthesize_plan(slides, structural_analysis, visual_analysis)
+        print(
+            "🧠 ContextBuilder: synthesis done "
+            f"({time.monotonic() - stage_start:.2f}s)"
+        )
 
         if progress_callback:
             progress_callback("synthesis", 1.0)
@@ -97,12 +123,22 @@ class GlobalContextBuilder:
         if progress_callback:
             progress_callback("section_strategies", 0.0)
 
+        stage_start = time.monotonic()
+        print("🧠 ContextBuilder: section_strategies start")
         section_strategies = await self._build_section_strategies(slides, global_plan)
         global_plan.section_narration_strategies = section_strategies
+        print(
+            "🧠 ContextBuilder: section_strategies done "
+            f"({time.monotonic() - stage_start:.2f}s)"
+        )
 
         if progress_callback:
             progress_callback("section_strategies", 1.0)
 
+        print(
+            "🧠 ContextBuilder: complete "
+            f"({time.monotonic() - start_time:.2f}s)"
+        )
         return global_plan
 
     def _synthesize_plan(
@@ -229,6 +265,10 @@ class GlobalContextBuilder:
             List of SectionNarrationStrategy objects
         """
         strategies = []
+        print(
+            "🧠 ContextBuilder: build_section_strategies "
+            f"sections={len(global_plan.sections)} slides={len(slides)}"
+        )
 
         # Check if there are slides before the first section (intro slides)
         first_section_start = global_plan.sections[0].start_slide if global_plan.sections else len(slides)
@@ -236,6 +276,10 @@ class GlobalContextBuilder:
         if first_section_start > 0:
             # Create a "Front Matter" section for intro slides
             intro_slides = slides[0:first_section_start]
+            print(
+                "🧠 ContextBuilder: intro section "
+                f"slides=0..{first_section_start - 1}"
+            )
 
             # Create simple strategies for intro slides
             intro_slide_strategies = []
@@ -283,13 +327,28 @@ class GlobalContextBuilder:
                     section_slides.append(slides[i])
 
             if not section_slides:
+                print(
+                    "🧠 ContextBuilder: section skipped (no slides) "
+                    f"section_index={section_idx} title={section.title!r}"
+                )
                 continue  # Skip empty sections
 
             # Ask AI to create slide-by-slide strategy for this section
+            stage_start = time.monotonic()
+            print(
+                "🧠 ContextBuilder: section strategy start "
+                f"section_index={section_idx} slides={len(section_slides)} "
+                f"title={section.title!r}"
+            )
             strategy_response = await self.ai_provider.create_section_narration_strategy(
                 section=section,
                 section_slides=section_slides,
                 global_context=global_plan
+            )
+            print(
+                "🧠 ContextBuilder: section strategy done "
+                f"section_index={section_idx} "
+                f"({time.monotonic() - stage_start:.2f}s)"
             )
 
             # Parse response into SlideNarrationStrategy objects
@@ -303,6 +362,10 @@ class GlobalContextBuilder:
                     key_points=slide_strat_data.get("key_points", []),
                     avoid_repeating=slide_strat_data.get("avoid_repeating", [])
                 ))
+            print(
+                "🧠 ContextBuilder: section strategy parsed "
+                f"section_index={section_idx} slide_strategies={len(slide_strategies)}"
+            )
 
             # Create section strategy
             section_strategy = SectionNarrationStrategy(
@@ -335,6 +398,10 @@ class GlobalContextBuilder:
                 - visual_analysis: Raw visual analysis
                 - token_usage: Token counts if available
         """
+        print(
+            "🧠 ContextBuilder: build_context_with_stages start "
+            f"slides={len(slides)}"
+        )
         # Run structural analysis
         structural_analysis = await self.ai_provider.analyze_structure(slides)
 
