@@ -30,6 +30,7 @@ export default function LectureViewer() {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [currentSubtitle, setCurrentSubtitle] = useState('')
+  const [showSubtitles, setShowSubtitles] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showControls, setShowControls] = useState(true)
   const [audioLoading, setAudioLoading] = useState(false)
@@ -390,7 +391,7 @@ export default function LectureViewer() {
                 )}
 
                 {/* Subtitles - overlay inside slide */}
-                {isPlaying && currentSubtitle && (
+                {isPlaying && showSubtitles && currentSubtitle && (
                   <div className={`absolute left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-white/90 border border-slate-200 rounded-lg px-5 py-2.5 transition-all duration-300 ${
                     isFullscreen ? (showControls ? 'bottom-6' : 'bottom-2') : 'bottom-4'
                   }`}>
@@ -492,6 +493,18 @@ export default function LectureViewer() {
                       </>
                     )}
                   </div>
+                </button>
+
+                <button
+                  onClick={() => setShowSubtitles(prev => !prev)}
+                  aria-pressed={showSubtitles}
+                  className={`px-3 py-2 border rounded-lg text-xs font-semibold tracking-wide transition-colors ${
+                    showSubtitles
+                      ? 'bg-slate-900 text-white border-slate-900'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  CC
                 </button>
 
                 <button
