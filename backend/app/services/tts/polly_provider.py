@@ -69,9 +69,7 @@ class PollyTTSProvider:
                 ):
                     rate = "92%"
 
-                ssml_sentences.append(
-                    f"<s><prosody rate='{rate}'>{escaped}</prosody></s>"
-                )
+                ssml_sentences.append(f"<s><prosody rate='{rate}'>{escaped}</prosody></s>")
 
             body = " <break time='150ms'/> ".join(ssml_sentences)
             return f"<speak>{body}</speak>"

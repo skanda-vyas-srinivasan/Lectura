@@ -50,6 +50,7 @@ def load_sessions():
 
 # Rate limiting storage: {ip_address: [timestamp1, timestamp2, ...]}
 rate_limit_storage: Dict[str, list] = {}
+polly_rate_limit_storage: Dict[str, list] = {}
 active_sessions_by_ip: Dict[str, set] = {}
 processing_tasks: Dict[str, asyncio.Task] = {}
 
@@ -144,6 +145,26 @@ def check_rate_limit(ip: str, max_requests: int = 5, window_hours: int = 24) -> 
     return True
 
 
+def check_polly_rate_limit(ip: str, max_requests: int = 1, window_hours: int = 24) -> bool:
+    """Check if an IP has exceeded the Polly-only rate limit."""
+    now = datetime.now()
+    cutoff_time = now - timedelta(hours=window_hours)
+
+    if ip in polly_rate_limit_storage:
+        polly_rate_limit_storage[ip] = [
+            timestamp for timestamp in polly_rate_limit_storage[ip]
+            if timestamp > cutoff_time
+        ]
+    else:
+        polly_rate_limit_storage[ip] = []
+
+    if len(polly_rate_limit_storage[ip]) >= max_requests:
+        return False
+
+    polly_rate_limit_storage[ip].append(now)
+    return True
+
+
 def check_concurrent_limit(ip: str, max_active: int = 1) -> bool:
     """Check if an IP has too many active sessions."""
     active = active_sessions_by_ip.get(ip, set())
@@ -229,12 +250,20 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     # Get client IP (handle proxies/load balancers)
     client_ip = resolve_client_ip(request)
 
-    # Check rate limit (5 lectures per 24 hours)
+    # Check overall rate limit (5 lectures per 24 hours)
     if not check_rate_limit(client_ip, max_requests=5, window_hours=24):
         raise HTTPException(
             status_code=429,
-            detail="Rate limit exceeded. You can process up to 5 lectures per day. Please try again later."
+            detail="Rate limit exceeded (5 per day). Please try again later."
         )
+
+    # Check Polly-only rate limit (1 lecture per 24 hours)
+    if tts_provider == "polly":
+        if not check_polly_rate_limit(client_ip, max_requests=1, window_hours=24):
+            raise HTTPException(
+                status_code=429,
+                detail="Polly rate limit exceeded (1 per day). Please switch to Edge or try again later."
+            )
     # Check concurrent processing limit (1 active session per IP)
     if not check_concurrent_limit(client_ip, max_active=1):
         raise HTTPException(
@@ -512,11 +541,14 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
             ends_with_punct = text.rstrip().endswith(('.', '!', '?'))
             has_substantial_content = bool(slide.body_text and len(slide.body_text.strip()) > 80)
             is_title_like = slide.slide_type.value in {"title", "section_header"}
+
             if is_title_like:
-                return word_count < 15 and has_substantial_content
-            if has_substantial_content and word_count < 60:
+                return word_count < 18 and has_substantial_content
+            if has_substantial_content and word_count < 80:
                 return True
-            if word_count > 20 and not ends_with_punct:
+            if word_count >= 15 and not ends_with_punct:
+                return True
+            if word_count < 25 and not ends_with_punct:
                 return True
             return False
 
@@ -538,8 +570,21 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                         previous_narration_summary=prev_summary,
                         related_slides=None,
                     )
-                    all_narrations[slide_idx] = narration.strip()
+                    narration = narration.strip()
+                    all_narrations[slide_idx] = narration
                     print(f"✅ Regenerated narration for slide {slide_idx}")
+
+                    # Second-chance retry if still incomplete.
+                    if is_incomplete_narration(slide_idx, narration):
+                        print(f"🔁 Second retry for slide {slide_idx} (still incomplete)")
+                        narration = await gemini_provider.generate_narration(
+                            slide=slides[slide_idx],
+                            global_plan=global_plan_dict,
+                            previous_narration_summary=prev_summary,
+                            related_slides=None,
+                        )
+                        all_narrations[slide_idx] = narration.strip()
+                        print(f"✅ Second retry complete for slide {slide_idx}")
                 except Exception as e:
                     print(f"❌ Regenerate failed for slide {slide_idx}: {e}")
 

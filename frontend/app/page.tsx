@@ -10,7 +10,7 @@ export default function Home() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [enableVision, setEnableVision] = useState(false)
-  const [ttsProvider, setTtsProvider] = useState<'edge' | 'polly'>('polly')
+  const [ttsProvider, setTtsProvider] = useState<'edge' | 'polly'>('edge')
   const [pollyVoice, setPollyVoice] = useState<string>('Matthew')
 
   // TTS Test state
