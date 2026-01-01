@@ -84,31 +84,31 @@ export default function Dashboard() {
   const currentPhaseIndex = phases.indexOf(status.phase)
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-sky-100">
-      <div className="max-w-4xl w-full">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-semibold text-slate-900">
+    <main className="flex min-h-screen flex-col items-center justify-center p-10 bg-sky-100">
+      <div className="max-w-3xl w-full">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl md:text-4xl font-semibold text-slate-900">
             Processing Your Lecture
           </h1>
-          <p className="text-lg text-slate-600 mt-3">
+          <p className="text-base text-slate-600 mt-3">
             This may take a few minutes.
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-8 border border-slate-200 text-slate-900">
+        <div className="bg-white rounded-2xl p-8 border border-slate-200 text-slate-900 shadow-sm">
           {/* Current phase indicator */}
           <div className="mb-8 text-center">
-            <div className="inline-flex items-center space-x-3 bg-sky-50 px-6 py-3 rounded-full border border-sky-200">
+            <div className="inline-flex items-center space-x-3 bg-sky-50 px-5 py-2.5 rounded-full border border-sky-200">
               {!status.complete && (
-                <div className="w-2.5 h-2.5 bg-sky-500 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-sky-500 rounded-full animate-pulse"></div>
               )}
-              <span className="text-base font-semibold text-sky-700">
+              <span className="text-sm font-semibold text-sky-700">
                 {getPhaseLabel(status.phase)}
               </span>
             </div>
-            <p className="text-slate-600 mt-4">{status.message}</p>
+            <p className="text-slate-600 mt-4 text-sm">{status.message}</p>
             {status.total_slides && (
-              <p className="text-sm text-slate-500 mt-2">
+              <p className="text-xs text-slate-500 mt-2">
                 Total slides: {status.total_slides}
               </p>
             )}
@@ -116,19 +116,19 @@ export default function Dashboard() {
 
           {/* Progress bar */}
           <div className="mb-8">
-            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
               <div
                 className="bg-sky-500 h-full transition-all duration-500 ease-out"
                 style={{ width: `${status.progress}%` }}
               ></div>
             </div>
-            <p className="text-center text-sm text-slate-500 mt-2">
+            <p className="text-center text-xs text-slate-500 mt-2">
               {Math.round(status.progress)}% complete
             </p>
           </div>
 
           {/* Phase checklist */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {phases.map((phase, index) => {
               const isComplete = index < currentPhaseIndex || status.complete
               const isCurrent = index === currentPhaseIndex && !status.complete
@@ -136,22 +136,20 @@ export default function Dashboard() {
               return (
                 <div
                   key={phase}
-                  className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
+                  className={`flex items-center justify-between px-4 py-2 rounded-lg transition-colors ${
                     isCurrent ? 'bg-sky-50 border border-sky-200' : 'bg-slate-50'
                   }`}
                 >
-                  {isComplete ? (
-                    <svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : isCurrent ? (
-                    <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <div className="w-6 h-6 border-2 border-slate-200 rounded-full"></div>
-                  )}
-                  <span className={`${isComplete ? 'text-emerald-600' : isCurrent ? 'text-sky-700 font-semibold' : 'text-slate-500'}`}>
+                  <span className={`text-sm ${isComplete ? 'text-emerald-600' : isCurrent ? 'text-sky-700 font-semibold' : 'text-slate-600'}`}>
                     {getPhaseLabel(phase)}
                   </span>
+                  {isComplete ? (
+                    <span className="text-xs text-emerald-600">Done</span>
+                  ) : isCurrent ? (
+                    <span className="text-xs text-sky-600">In progress</span>
+                  ) : (
+                    <span className="text-xs text-slate-400">Queued</span>
+                  )}
                 </div>
               )
             })}

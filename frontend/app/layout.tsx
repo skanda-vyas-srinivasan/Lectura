@@ -8,8 +8,8 @@ const spaceGrotesk = Space_Grotesk({
 })
 
 export const metadata: Metadata = {
-  title: 'AI Lecturer System',
-  description: 'Autonomous AI lecturer for slide-based instructional material',
+  title: 'Lectora',
+  description: 'Turn slide decks into clear, narrated lectures.',
 }
 
 export default function RootLayout({
