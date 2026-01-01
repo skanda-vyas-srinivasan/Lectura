@@ -228,12 +228,6 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
 
     # Get client IP (handle proxies/load balancers)
     client_ip = resolve_client_ip(request)
-    print(
-        "🌐 IP DEBUG: "
-        f"resolved={client_ip} x-forwarded-for={request.headers.get('X-Forwarded-For')} "
-        f"x-real-ip={request.headers.get('X-Real-IP')} "
-        f"client={request.client.host}"
-    )
 
     # Check rate limit (5 lectures per 24 hours)
     if not check_rate_limit(client_ip, max_requests=5, window_hours=24):
