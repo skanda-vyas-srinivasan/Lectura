@@ -8,6 +8,7 @@ import asyncio
 import uuid
 from pathlib import Path
 from typing import Dict, Any
+import shutil
 from datetime import datetime, timedelta
 from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -50,6 +51,7 @@ def load_sessions():
 # Rate limiting storage: {ip_address: [timestamp1, timestamp2, ...]}
 rate_limit_storage: Dict[str, list] = {}
 active_sessions_by_ip: Dict[str, set] = {}
+processing_tasks: Dict[str, asyncio.Task] = {}
 
 app = FastAPI(title="AI Lecturer API")
 
@@ -144,6 +146,24 @@ def unregister_active_session(ip: str, session_id: str) -> None:
         active_sessions_by_ip.pop(ip, None)
 
 
+async def cleanup_session_files(session_id: str) -> None:
+    """Remove temp file and output artifacts for a session."""
+    session = sessions.get(session_id, {})
+    temp_path = session.get("temp_file")
+    output_dir = Path("output") / session_id
+
+    if temp_path:
+        try:
+            await asyncio.to_thread(Path(temp_path).unlink, missing_ok=True)
+        except Exception:
+            pass
+    if output_dir.exists():
+        try:
+            await asyncio.to_thread(shutil.rmtree, output_dir, True)
+        except Exception:
+            pass
+
+
 @app.post("/api/v1/upload")
 async def upload_file(request: Request, file: UploadFile = File(...), enable_vision: bool = False, tts_provider: str = "edge", polly_voice: str = "Matthew"):
     """Upload a PDF or PPTX file and start processing.
@@ -230,7 +250,8 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     register_active_session(client_ip, session_id)
 
     # Start processing in background
-    asyncio.create_task(process_lecture(session_id, str(temp_file), enable_vision, tts_provider, polly_voice))
+    task = asyncio.create_task(process_lecture(session_id, str(temp_file), enable_vision, tts_provider, polly_voice))
+    processing_tasks[session_id] = task
 
     print(f"✅ UPLOAD COMPLETE - returning session_id: {session_id}")
     return {"session_id": session_id}
@@ -685,7 +706,22 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         client_ip = sessions[session_id].get("client_ip")
         if client_ip:
             unregister_active_session(client_ip, session_id)
+        processing_tasks.pop(session_id, None)
 
+    except asyncio.CancelledError:
+        sessions[session_id]["status"] = {
+            "phase": "canceled",
+            "progress": 0,
+            "message": "Processing canceled.",
+            "complete": False
+        }
+        await asyncio.to_thread(save_session, session_id)
+        await cleanup_session_files(session_id)
+        client_ip = sessions.get(session_id, {}).get("client_ip")
+        if client_ip:
+            unregister_active_session(client_ip, session_id)
+        processing_tasks.pop(session_id, None)
+        return
     except Exception as e:
         sessions[session_id]["status"] = {
             "phase": "error",
@@ -704,6 +740,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         client_ip = sessions.get(session_id, {}).get("client_ip")
         if client_ip:
             unregister_active_session(client_ip, session_id)
+        processing_tasks.pop(session_id, None)
 
 
 @app.get("/api/v1/sessions")
@@ -735,6 +772,38 @@ async def get_status(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
 
     return sessions[session_id]["status"]
+
+
+@app.post("/api/v1/session/{session_id}/cancel")
+async def cancel_session(session_id: str):
+    """Cancel a processing session."""
+    if session_id not in sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    status = sessions[session_id].get("status", {})
+    if status.get("complete"):
+        raise HTTPException(status_code=400, detail="Session already complete")
+    if status.get("phase") in {"canceled", "error"}:
+        return {"status": status}
+
+    task = processing_tasks.get(session_id)
+    if task and not task.done():
+        task.cancel()
+
+    sessions[session_id]["status"] = {
+        "phase": "canceled",
+        "progress": 0,
+        "message": "Processing canceled.",
+        "complete": False
+    }
+    await asyncio.to_thread(save_session, session_id)
+    await cleanup_session_files(session_id)
+    client_ip = sessions.get(session_id, {}).get("client_ip")
+    if client_ip:
+        unregister_active_session(client_ip, session_id)
+    processing_tasks.pop(session_id, None)
+
+    return {"status": sessions[session_id]["status"]}
 
 
 @app.get("/api/v1/session/{session_id}/lecture")

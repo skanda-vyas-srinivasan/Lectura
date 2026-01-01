@@ -24,6 +24,7 @@ export default function Dashboard() {
     complete: false
   })
   const [error, setError] = useState<string | null>(null)
+  const [isCanceling, setIsCanceling] = useState(false)
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout
@@ -46,6 +47,9 @@ export default function Dashboard() {
             router.push(`/lecture/${sessionId}`)
           }, 1500)
         }
+        if (data.phase === 'canceled') {
+          clearInterval(intervalId)
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch status')
         clearInterval(intervalId)
@@ -67,6 +71,7 @@ export default function Dashboard() {
       generating_narrations: 'Writing narration',
       generating_audio: 'Recording audio',
       creating_viewer: 'Finalizing lecture',
+      canceled: 'Canceled',
       complete: 'Complete!'
     }
     return labels[phase] || phase
@@ -80,6 +85,30 @@ export default function Dashboard() {
     'generating_audio',
     'creating_viewer'
   ]
+
+  const canCancel = !status.complete && status.phase !== 'canceled' && status.phase !== 'error'
+
+  const cancelProcessing = async () => {
+    if (isCanceling) return
+    setIsCanceling(true)
+    try {
+      const response = await fetch(`${API_URL}/api/v1/session/${sessionId}/cancel`, {
+        method: 'POST',
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to cancel')
+      }
+      const data = await response.json()
+      if (data?.status) {
+        setStatus(data.status)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to cancel')
+    } finally {
+      setIsCanceling(false)
+    }
+  }
 
   const currentPhaseIndex = phases.indexOf(status.phase)
 
@@ -106,6 +135,17 @@ export default function Dashboard() {
               <p className="text-xs text-slate-500 mt-2">
                 Total slides: {status.total_slides}
               </p>
+            )}
+            {canCancel && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={cancelProcessing}
+                  disabled={isCanceling}
+                  className="px-4 py-2 text-xs font-semibold text-red-700 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isCanceling ? 'Canceling…' : 'Cancel Processing'}
+                </button>
+              </div>
             )}
           </div>
 
@@ -167,6 +207,18 @@ export default function Dashboard() {
                 <span className="text-xl font-semibold">Processing Complete!</span>
               </div>
               <p className="text-slate-500 mt-2">Redirecting to viewer...</p>
+            </div>
+          )}
+
+          {status.phase === 'canceled' && (
+            <div className="mt-6 text-center">
+              <div className="inline-flex items-center space-x-2 text-slate-600">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span className="text-base font-semibold">Processing canceled</span>
+              </div>
+              <p className="text-slate-500 mt-2">You can upload a new file whenever you're ready.</p>
             </div>
           )}
 
