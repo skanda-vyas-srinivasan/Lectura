@@ -36,7 +36,7 @@ class EdgeTTSProvider(TTSProvider):
         """
         self.voice = voice
 
-    def _to_ssml(self, text: str, expressive: bool = True) -> str:
+    def _to_ssml(self, text: str) -> str:
         """Convert plain text into SSML with more natural pacing and emphasis."""
         sentence_pattern = re.compile(r'[^.!?]+[.!?]|[^.!?]+$')
         sentences = [s.strip() for s in sentence_pattern.findall(text) if s.strip()]
@@ -89,22 +89,7 @@ class EdgeTTSProvider(TTSProvider):
             ssml_sentences.append(f"<s>{escaped}</s>")
 
         body = " <break time='180ms'/> ".join(ssml_sentences)
-        if expressive:
-            return (
-                "<speak version='1.0' xml:lang='en-US' "
-                "xmlns='http://www.w3.org/2001/10/synthesis' "
-                "xmlns:mstts='http://www.w3.org/2001/mstts'>"
-                "<mstts:express-as style='cheerful' styledegree='1.8'>"
-                f"<prosody rate='104%'>{body}</prosody>"
-                "</mstts:express-as>"
-                "</speak>"
-            )
-        return (
-            "<speak version='1.0' xml:lang='en-US' "
-            "xmlns='http://www.w3.org/2001/10/synthesis'>"
-            f"<prosody rate='104%'>{body}</prosody>"
-            "</speak>"
-        )
+        return f"<speak><prosody rate='104%'>{body}</prosody></speak>"
 
     async def generate_audio(
         self,
@@ -130,7 +115,7 @@ class EdgeTTSProvider(TTSProvider):
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Generate audio with word timing using SubMaker
-        ssml = self._to_ssml(text, expressive=True)
+        ssml = self._to_ssml(text)
         submaker = edge_tts.SubMaker()
 
         try:
@@ -142,8 +127,7 @@ class EdgeTTSProvider(TTSProvider):
                     elif chunk["type"] in ["WordBoundary", "SentenceBoundary"]:
                         submaker.feed(chunk)
         except Exception:
-            # Fallback if expressive SSML isn't supported by the voice.
-            ssml = self._to_ssml(text, expressive=False)
+            # Retry once with the same safe SSML.
             communicate = edge_tts.Communicate(ssml, voice_to_use)
             with open(str(output_path), "wb") as audio_file:
                 async for chunk in communicate.stream():
