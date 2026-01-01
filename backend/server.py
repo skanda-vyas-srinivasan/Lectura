@@ -49,6 +49,7 @@ def load_sessions():
 
 # Rate limiting storage: {ip_address: [timestamp1, timestamp2, ...]}
 rate_limit_storage: Dict[str, list] = {}
+active_sessions_by_ip: Dict[str, set] = {}
 
 app = FastAPI(title="AI Lecturer API")
 
@@ -124,6 +125,25 @@ def check_rate_limit(ip: str, max_requests: int = 5, window_hours: int = 24) -> 
     return True
 
 
+def check_concurrent_limit(ip: str, max_active: int = 1) -> bool:
+    """Check if an IP has too many active sessions."""
+    active = active_sessions_by_ip.get(ip, set())
+    return len(active) < max_active
+
+
+def register_active_session(ip: str, session_id: str) -> None:
+    active_sessions_by_ip.setdefault(ip, set()).add(session_id)
+
+
+def unregister_active_session(ip: str, session_id: str) -> None:
+    active = active_sessions_by_ip.get(ip)
+    if not active:
+        return
+    active.discard(session_id)
+    if not active:
+        active_sessions_by_ip.pop(ip, None)
+
+
 @app.post("/api/v1/upload")
 async def upload_file(request: Request, file: UploadFile = File(...), enable_vision: bool = False, tts_provider: str = "edge", polly_voice: str = "Matthew"):
     """Upload a PDF or PPTX file and start processing.
@@ -144,12 +164,24 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     else:
         # Fallback to X-Real-IP header
         client_ip = request.headers.get("X-Real-IP", request.client.host)
+    print(
+        "🌐 IP DEBUG: "
+        f"resolved={client_ip} x-forwarded-for={forwarded_for} "
+        f"x-real-ip={request.headers.get('X-Real-IP')} "
+        f"client={request.client.host}"
+    )
 
     # Check rate limit (5 lectures per 24 hours)
     if not check_rate_limit(client_ip, max_requests=5, window_hours=24):
         raise HTTPException(
             status_code=429,
             detail="Rate limit exceeded. You can process up to 5 lectures per day. Please try again later."
+        )
+    # Check concurrent processing limit (1 active session per IP)
+    if not check_concurrent_limit(client_ip, max_active=1):
+        raise HTTPException(
+            status_code=429,
+            detail="Another lecture is already processing for this IP. Please wait for it to finish."
         )
     # Validate file type
     if not (file.filename.endswith('.pdf') or file.filename.endswith('.pptx')):
@@ -166,12 +198,12 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     # Check slide count BEFORE processing (reject early)
     import fitz
     slide_count = await asyncio.to_thread(lambda: len(fitz.open(str(temp_file))))
-    if slide_count > 50:
+    if slide_count > 100:
         # Clean up temp file
         await asyncio.to_thread(temp_file.unlink, missing_ok=True)
         raise HTTPException(
             status_code=400,
-            detail=f"Presentation has {slide_count} slides. Maximum allowed is 50 slides."
+            detail=f"Presentation has {slide_count} slides. Maximum allowed is 100 slides."
         )
 
     # Initialize session
@@ -181,6 +213,7 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
         "temp_file": str(temp_file),
         "enable_vision": enable_vision,
         "tts_provider": tts_provider,
+        "client_ip": client_ip,
         "created_at": datetime.now().isoformat(),
         "status": {
             "phase": "starting",
@@ -192,6 +225,9 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
 
     # Save initial session to disk
     await asyncio.to_thread(save_session, session_id)
+
+    # Register active session for concurrency control
+    register_active_session(client_ip, session_id)
 
     # Start processing in background
     asyncio.create_task(process_lecture(session_id, str(temp_file), enable_vision, tts_provider, polly_voice))
@@ -645,6 +681,11 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         # Save completed session to disk
         await asyncio.to_thread(save_session, session_id)
 
+        # Release concurrency slot
+        client_ip = sessions[session_id].get("client_ip")
+        if client_ip:
+            unregister_active_session(client_ip, session_id)
+
     except Exception as e:
         sessions[session_id]["status"] = {
             "phase": "error",
@@ -658,6 +699,11 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
 
         # Save failed session to disk
         await asyncio.to_thread(save_session, session_id)
+
+        # Release concurrency slot
+        client_ip = sessions.get(session_id, {}).get("client_ip")
+        if client_ip:
+            unregister_active_session(client_ip, session_id)
 
 
 @app.get("/api/v1/sessions")
