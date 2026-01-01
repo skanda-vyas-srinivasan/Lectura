@@ -84,18 +84,18 @@ export default function Dashboard() {
   const currentPhaseIndex = phases.indexOf(status.phase)
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-sky-100">
       <div className="max-w-4xl w-full">
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+          <h1 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-sky-600 to-blue-700">
             Processing Your Lecture
           </h1>
-          <p className="text-xl text-gray-300">
+          <p className="text-xl text-slate-700">
             This may take a few minutes...
           </p>
         </div>
 
-        <div className="bg-slate-800/50 rounded-2xl p-8 border border-gray-700">
+        <div className="bg-slate-900/85 rounded-2xl p-8 border border-white/10 text-white">
           {/* Current phase indicator */}
           <div className="mb-8 text-center">
             <div className="inline-flex items-center space-x-3 bg-blue-950/50 px-6 py-3 rounded-full border border-blue-500">
@@ -106,9 +106,9 @@ export default function Dashboard() {
                 {getPhaseLabel(status.phase)}
               </span>
             </div>
-            <p className="text-gray-400 mt-4">{status.message}</p>
+            <p className="text-slate-300 mt-4">{status.message}</p>
             {status.total_slides && (
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-sm text-slate-400 mt-2">
                 Total slides: {status.total_slides}
               </p>
             )}
@@ -116,13 +116,13 @@ export default function Dashboard() {
 
           {/* Progress bar */}
           <div className="mb-8">
-            <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-500 ease-out"
+                className="bg-gradient-to-r from-sky-500 to-blue-600 h-full transition-all duration-500 ease-out"
                 style={{ width: `${status.progress}%` }}
               ></div>
             </div>
-            <p className="text-center text-sm text-gray-400 mt-2">
+            <p className="text-center text-sm text-slate-300 mt-2">
               {Math.round(status.progress)}% complete
             </p>
           </div>
@@ -141,15 +141,15 @@ export default function Dashboard() {
                   }`}
                 >
                   {isComplete ? (
-                    <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   ) : isCurrent ? (
                     <div className="w-6 h-6 border-3 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <div className="w-6 h-6 border-2 border-gray-600 rounded-full"></div>
+                    <div className="w-6 h-6 border-2 border-white/20 rounded-full"></div>
                   )}
-                  <span className={`${isComplete ? 'text-green-300' : isCurrent ? 'text-blue-300 font-semibold' : 'text-gray-500'}`}>
+                  <span className={`${isComplete ? 'text-emerald-200' : isCurrent ? 'text-sky-200 font-semibold' : 'text-slate-400'}`}>
                     {getPhaseLabel(phase)}
                   </span>
                 </div>
@@ -159,13 +159,13 @@ export default function Dashboard() {
 
           {status.complete && (
             <div className="mt-8 text-center">
-              <div className="inline-flex items-center space-x-2 text-green-400">
+              <div className="inline-flex items-center space-x-2 text-emerald-400">
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span className="text-xl font-semibold">Processing Complete!</span>
               </div>
-              <p className="text-gray-400 mt-2">Redirecting to viewer...</p>
+              <p className="text-slate-300 mt-2">Redirecting to viewer...</p>
             </div>
           )}
 

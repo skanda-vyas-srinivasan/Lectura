@@ -110,35 +110,35 @@ export default function Home() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-black">
+    <div className="relative min-h-screen overflow-hidden bg-sky-100">
       {/* Animated background */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-cyan-900/20"></div>
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-sky-100 via-sky-200 to-blue-200"></div>
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-sky-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-cyan-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
       </div>
 
       {/* Grid overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a12_1px,transparent_1px),linear-gradient(to_bottom,#0f172a12_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
 
       <main className="relative min-h-screen flex items-center justify-center p-8">
         <div className="max-w-5xl w-full">
           {/* Header */}
           <div className="text-center mb-16 space-y-6">
-            <h1 className="text-7xl md:text-8xl font-black mb-6">
-              <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 text-transparent bg-clip-text animate-gradient">
+            <h1 className="text-7xl md:text-8xl font-black mb-6 tracking-tight">
+              <span className="bg-gradient-to-r from-blue-300 via-sky-300 to-cyan-200 text-transparent bg-clip-text animate-gradient">
                 AI Lecturer
               </span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto">
-              Transform your slides into <span className="text-white font-semibold">engaging narrated lectures</span> with AI
+            <p className="text-xl md:text-2xl text-slate-700 max-w-2xl mx-auto">
+              Transform your slides into <span className="text-slate-900 font-semibold">clear, narrated lectures</span> with AI
             </p>
 
             <button
               onClick={() => router.push('/presentations')}
-              className="inline-flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+              className="inline-flex items-center space-x-2 text-slate-700 hover:text-slate-900 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -158,16 +158,16 @@ export default function Home() {
                   onChange={(e) => setEnableVision(e.target.checked)}
                   className="peer sr-only"
                 />
-                <div className="flex items-center space-x-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4 transition-all peer-checked:border-purple-500/50 peer-checked:bg-purple-500/10 hover:bg-white/10">
-                  <div className="w-12 h-6 bg-gray-700 rounded-full relative transition-colors peer-checked:bg-purple-500">
+                <div className="flex items-center space-x-4 bg-white/70 backdrop-blur-xl border border-slate-200 rounded-2xl px-6 py-4 transition-all peer-checked:border-blue-400 peer-checked:bg-blue-100 hover:bg-white">
+                  <div className="w-12 h-6 bg-slate-300 rounded-full relative transition-colors peer-checked:bg-blue-500">
                     <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${enableVision ? 'translate-x-6' : ''}`}></div>
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-white flex items-center space-x-2">
+                    <div className="text-sm font-semibold text-slate-900 flex items-center space-x-2">
                       <span>Vision Analysis</span>
-                      {enableVision && <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full">ON</span>}
+                      {enableVision && <span className="text-xs bg-blue-500/20 text-blue-700 px-2 py-0.5 rounded-full">ON</span>}
                     </div>
-                    <div className="text-xs text-gray-400 mt-0.5">
+                    <div className="text-xs text-slate-600 mt-0.5">
                       Analyze diagrams, tables & charts
                     </div>
                   </div>
@@ -175,44 +175,44 @@ export default function Home() {
               </label>
 
               {/* TTS Provider selector */}
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl px-6 py-4">
-                <label className="block text-sm font-semibold text-white mb-3">
+              <div className="bg-white/70 backdrop-blur-xl border border-slate-200 rounded-2xl px-6 py-4">
+                <label className="block text-sm font-semibold text-slate-900 mb-3">
                   🎤 Voice Provider
                 </label>
                 <select
                   value={ttsProvider}
                   onChange={(e) => setTtsProvider(e.target.value as 'edge' | 'polly')}
-                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all"
                 >
-                  <option value="polly" className="bg-gray-900">🎤 AWS Polly (Neural) - Better Quality</option>
-                  <option value="edge" className="bg-gray-900">🔊 Edge TTS - Fast & Free</option>
+                  <option value="polly" className="bg-white">🎤 AWS Polly (Neural) - Better Quality</option>
+                  <option value="edge" className="bg-white">🔊 Edge TTS - Fast & Free</option>
                 </select>
 
                 {/* Polly Voice Selector */}
                 {ttsProvider === 'polly' && (
                   <div className="mt-3">
-                    <label className="block text-xs font-semibold text-gray-300 mb-2">
+                    <label className="block text-xs font-semibold text-slate-700 mb-2">
                       Voice
                     </label>
                     <select
                       value={pollyVoice}
                       onChange={(e) => setPollyVoice(e.target.value)}
-                      className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/50 transition-all"
                     >
-                      <option value="Matthew" className="bg-gray-900">Matthew (Male, US)</option>
-                      <option value="Joanna" className="bg-gray-900">Joanna (Female, US)</option>
-                      <option value="Salli" className="bg-gray-900">Salli (Female, US)</option>
-                      <option value="Joey" className="bg-gray-900">Joey (Male, US)</option>
-                      <option value="Justin" className="bg-gray-900">Justin (Male, US)</option>
-                      <option value="Kevin" className="bg-gray-900">Kevin (Male, US)</option>
-                      <option value="Kendra" className="bg-gray-900">Kendra (Female, US)</option>
-                      <option value="Ruth" className="bg-gray-900">Ruth (Female, US)</option>
-                      <option value="Stephen" className="bg-gray-900">Stephen (Male, US)</option>
+                      <option value="Matthew" className="bg-white">Matthew (Male, US)</option>
+                      <option value="Joanna" className="bg-white">Joanna (Female, US)</option>
+                      <option value="Salli" className="bg-white">Salli (Female, US)</option>
+                      <option value="Joey" className="bg-white">Joey (Male, US)</option>
+                      <option value="Justin" className="bg-white">Justin (Male, US)</option>
+                      <option value="Kevin" className="bg-white">Kevin (Male, US)</option>
+                      <option value="Kendra" className="bg-white">Kendra (Female, US)</option>
+                      <option value="Ruth" className="bg-white">Ruth (Female, US)</option>
+                      <option value="Stephen" className="bg-white">Stephen (Male, US)</option>
                     </select>
                   </div>
                 )}
 
-                <div className="text-xs text-gray-400 mt-2">
+                <div className="text-xs text-slate-600 mt-2">
                   {ttsProvider === 'polly' ? 'High-quality neural voices (requires AWS setup)' : 'Free voice synthesis - no setup required'}
                 </div>
               </div>
@@ -225,11 +225,11 @@ export default function Home() {
               onDrop={handleDrop}
               className={`relative group`}
             >
-              <div className={`absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-3xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity ${isDragging ? 'opacity-30' : ''}`}></div>
+              <div className={`absolute inset-0 bg-gradient-to-r from-sky-400 via-blue-400 to-cyan-400 rounded-3xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity ${isDragging ? 'opacity-40' : ''}`}></div>
 
-              <div className={`relative bg-white/5 backdrop-blur-xl border-2 border-dashed rounded-3xl p-20 text-center transition-all ${
+              <div className={`relative bg-slate-900/85 backdrop-blur-xl border-2 border-dashed rounded-3xl p-20 text-center transition-all ${
                 isDragging
-                  ? 'border-blue-400 bg-blue-500/10 scale-105'
+                  ? 'border-sky-300 bg-sky-500/15 scale-105'
                   : 'border-white/20 hover:border-white/40'
               } ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
 
@@ -250,14 +250,14 @@ export default function Home() {
                     </div>
                     <div className="space-y-2">
                       <p className="text-2xl font-bold text-white">Uploading...</p>
-                      <p className="text-sm text-gray-400">Preparing your lecture</p>
+                      <p className="text-sm text-slate-300">Preparing your lecture</p>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-8">
                     <div className="relative inline-block">
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-2xl opacity-50"></div>
-                      <div className="relative bg-gradient-to-br from-blue-500/20 to-purple-500/20 p-8 rounded-2xl">
+                      <div className="absolute inset-0 bg-gradient-to-r from-sky-400 to-blue-500 rounded-2xl blur-2xl opacity-50"></div>
+                      <div className="relative bg-gradient-to-br from-sky-500/20 to-blue-500/20 p-8 rounded-2xl">
                         <svg className="w-20 h-20 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
@@ -268,17 +268,17 @@ export default function Home() {
                       <p className="text-3xl font-bold text-white">
                         {isDragging ? 'Drop it here!' : 'Drop your lecture deck'}
                       </p>
-                      <p className="text-gray-400">or</p>
+                      <p className="text-slate-400">or</p>
                       <label
                         htmlFor="file-upload"
-                        className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-bold py-4 px-10 rounded-xl transition-all transform hover:scale-105 cursor-pointer"
+                        className="inline-flex items-center space-x-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold py-4 px-10 rounded-xl transition-all transform hover:scale-105 cursor-pointer"
                       >
                         <span>Browse Files</span>
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
                       </label>
-                      <p className="text-sm text-gray-500 font-mono">
+                      <p className="text-sm text-slate-400 font-mono">
                         PDF • PPTX • Max 100MB
                       </p>
                     </div>
@@ -306,19 +306,19 @@ export default function Home() {
             <div className="mt-8">
               <button
                 onClick={() => setShowTtsTest(!showTtsTest)}
-                className="w-full text-center text-sm text-gray-500 hover:text-gray-400 transition-colors"
+                className="w-full text-center text-sm text-slate-600 hover:text-slate-700 transition-colors"
               >
                 {showTtsTest ? '▼' : '▶'} TTS Quick Test (Debug)
               </button>
 
               {showTtsTest && (
-                <div className="mt-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 space-y-4">
+                <div className="mt-4 bg-slate-900/85 backdrop-blur-xl border border-white/10 rounded-2xl p-6 space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm text-gray-400">Test Text:</label>
+                    <label className="text-sm text-slate-300">Test Text:</label>
                     <textarea
                       value={ttsTestText}
                       onChange={(e) => setTtsTestText(e.target.value)}
-                      className="w-full bg-black/30 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+                      className="w-full bg-white/5 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-sky-400 transition-colors"
                       rows={3}
                       placeholder="Enter text to test TTS..."
                     />
@@ -328,7 +328,7 @@ export default function Home() {
                     <button
                       onClick={testTts}
                       disabled={ttsTestLoading || !ttsTestText}
-                      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all"
+                      className="flex-1 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl transition-all"
                     >
                       {ttsTestLoading ? (
                         <span className="flex items-center justify-center space-x-2">
@@ -347,7 +347,7 @@ export default function Home() {
                     </div>
                   )}
 
-                  <p className="text-xs text-gray-500 text-center">
+                  <p className="text-xs text-slate-400 text-center">
                     This will play audio directly in your browser. Make sure your volume is on!
                   </p>
                 </div>

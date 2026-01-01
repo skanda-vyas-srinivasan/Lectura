@@ -283,7 +283,7 @@ export default function LectureViewer() {
 
   if (!lectureData) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
+      <div className="flex min-h-screen items-center justify-center bg-sky-100">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
           <p className="text-xl text-gray-400">Loading lecture...</p>
@@ -295,21 +295,21 @@ export default function LectureViewer() {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
   return (
-    <div ref={containerRef} className="relative min-h-screen bg-black text-white overflow-hidden" onMouseMove={handleMouseMove}>
+    <div ref={containerRef} className="relative min-h-screen bg-sky-100 text-white overflow-hidden" onMouseMove={handleMouseMove}>
       {/* Ambient background */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 via-purple-900/10 to-black"></div>
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-sky-100 via-sky-200 to-blue-200"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-sky-300/40 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-300/40 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative flex flex-col h-screen">
         {/* Header - hide in fullscreen */}
         {!isFullscreen && (
-        <header className="relative z-10 bg-black/40 backdrop-blur-xl border-b border-white/10">
+        <header className="relative z-10 bg-slate-900/85 backdrop-blur-xl border-b border-white/10">
           <div className="px-8 py-6 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -344,8 +344,8 @@ export default function LectureViewer() {
           }`}>
             {/* Slide card */}
             <div className="relative w-full h-full max-w-6xl flex flex-col">
-              <div className={`absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-3xl blur-2xl opacity-50 ${isFullscreen ? 'hidden' : ''}`}></div>
-              <div className={`relative flex-1 bg-black/40 backdrop-blur-xl border border-white/20 shadow-2xl overflow-hidden ${isFullscreen ? 'rounded-none border-0' : 'rounded-3xl p-4'}`}>
+              <div className={`absolute inset-0 bg-gradient-to-br from-sky-500/20 to-blue-500/20 rounded-3xl blur-2xl opacity-50 ${isFullscreen ? 'hidden' : ''}`}></div>
+              <div className={`relative flex-1 bg-slate-900/85 backdrop-blur-xl border border-white/20 shadow-2xl overflow-hidden ${isFullscreen ? 'rounded-none border-0' : 'rounded-3xl p-4'}`}>
                 <img
                   src={`${API_URL}/api/v1/session/${sessionId}/slide/${currentSlide}?v=${slideCacheBuster}`}
                   alt={`Slide ${currentSlide + 1}`}
@@ -354,8 +354,8 @@ export default function LectureViewer() {
                 />
 
                 {(audioLoading || audioError || slideError) && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                    <div className="flex items-center space-x-3 bg-black/60 border border-white/10 rounded-xl px-5 py-3">
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50">
+                    <div className="flex items-center space-x-3 bg-slate-900/70 border border-white/10 rounded-xl px-5 py-3">
                       {(audioError || slideError) ? (
                         <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -388,7 +388,7 @@ export default function LectureViewer() {
 
                 {/* Subtitles - overlay inside slide */}
                 {isPlaying && currentSubtitle && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-black/50 rounded-lg px-6 py-3 transition-all duration-300">
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-slate-900/60 rounded-lg px-6 py-3 transition-all duration-300">
                     <p className="text-white text-base text-center leading-relaxed font-medium">
                       {currentSubtitle}
                     </p>
@@ -400,7 +400,7 @@ export default function LectureViewer() {
 
           {/* Transcript panel - hide in fullscreen */}
           {!isFullscreen && (
-          <div className={`absolute right-0 top-0 h-full bg-black/60 backdrop-blur-2xl border-l border-white/10 transition-all duration-300 overflow-hidden ${
+          <div className={`absolute right-0 top-0 h-full bg-slate-900/85 backdrop-blur-2xl border-l border-white/10 transition-all duration-300 overflow-hidden ${
             showTranscript ? 'w-1/3' : 'w-0'
           }`}>
             {showTranscript && (
@@ -410,7 +410,7 @@ export default function LectureViewer() {
                     <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
                     <h2 className="text-lg font-bold text-white">Transcript</h2>
                   </div>
-                  <p className="text-sm text-blue-400 font-medium">
+                  <p className="text-sm text-sky-300 font-medium">
                     Slide {currentSlide + 1}: {lectureData.slide_titles?.[currentSlide] || `Slide ${currentSlide + 1}`}
                   </p>
                 </div>
@@ -426,7 +426,7 @@ export default function LectureViewer() {
         </div>
 
         {/* Controls */}
-        <div className={`relative z-10 bg-black/60 backdrop-blur-2xl border-t border-white/10 transition-all duration-300 ${
+        <div className={`relative z-10 bg-slate-900/90 backdrop-blur-2xl border-t border-white/10 transition-all duration-300 ${
           isFullscreen ? (showControls ? 'translate-y-0' : 'translate-y-full') : ''
         } ${isFullscreen ? 'absolute bottom-0 left-0 right-0' : ''}`}>
           <div className="px-8 py-6 space-y-6">
@@ -437,7 +437,7 @@ export default function LectureViewer() {
                 onClick={handleProgressBarClick}
               >
                 <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-100 rounded-full pointer-events-none"
+                  className="h-full bg-gradient-to-r from-sky-500 to-blue-600 transition-all duration-100 rounded-full pointer-events-none"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
@@ -465,7 +465,7 @@ export default function LectureViewer() {
 
                 <button
                   onClick={togglePlayPause}
-                  className="relative px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-blue-500/25"
+                  className="relative px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-blue-500/25"
                 >
                   <div className="flex items-center space-x-3">
                     {isPlaying ? (
