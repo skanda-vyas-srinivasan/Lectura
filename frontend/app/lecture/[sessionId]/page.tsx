@@ -40,6 +40,8 @@ export default function LectureViewer() {
   const [audioError, setAudioError] = useState<string | null>(null)
   const [slideError, setSlideError] = useState<string | null>(null)
   const [slideCacheBuster, setSlideCacheBuster] = useState(0)
+  const [hoverTime, setHoverTime] = useState<number | null>(null)
+  const [hoverX, setHoverX] = useState<number | null>(null)
 
   const audioRef = useRef<HTMLAudioElement>(null)
   const prefetchAudioRef = useRef<HTMLAudioElement | null>(null)
@@ -135,6 +137,20 @@ export default function LectureViewer() {
 
     audioRef.current.currentTime = newTime
     setCurrentTime(newTime)
+  }
+
+  const handleProgressBarMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (duration === 0) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width)
+    const percentage = x / rect.width
+    setHoverTime(percentage * duration)
+    setHoverX(x)
+  }
+
+  const handleProgressBarLeave = () => {
+    setHoverTime(null)
+    setHoverX(null)
   }
 
   const toggleFullscreen = () => {
@@ -461,13 +477,23 @@ export default function LectureViewer() {
               <div
                 className="w-full h-2 bg-slate-100 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all"
                 onClick={handleProgressBarClick}
+                onMouseMove={handleProgressBarMove}
+                onMouseLeave={handleProgressBarLeave}
               >
                 <div
                   className="h-full bg-sky-500 transition-all duration-100 rounded-full pointer-events-none"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
-              <div className="absolute -top-1 left-0 right-0 flex justify-between text-xs text-slate-500 font-mono">
+              {hoverTime !== null && hoverX !== null && (
+                <div
+                  className="absolute -top-7 text-[11px] text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-md shadow-sm pointer-events-none"
+                  style={{ left: hoverX, transform: 'translateX(-50%)' }}
+                >
+                  {formatTime(hoverTime)}
+                </div>
+              )}
+              <div className="mt-2 flex justify-between text-xs text-slate-500 font-mono pointer-events-none">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
