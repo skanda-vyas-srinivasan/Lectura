@@ -40,7 +40,7 @@ export default function PurposePage() {
             </p>
             <p>
               That is kind of the whole point of this app: to take all that stuff that
-              is already out there and make this intelligible.
+              is already out there and make this shit intelligible.
             </p>
             <p>
               I do not want this to replace professors. Real teaching matters. Real
@@ -58,8 +58,8 @@ export default function PurposePage() {
             <p>This app is just my small attempt to fix a tiny piece of that problem.</p>
             <p>Make things clearer. Fill in the gaps.</p>
             <p>
-              Let people actually learn without needing money, luck, or access to the
-              right school.
+              Let people actually learn without needing money or access to some fancy
+              school.
             </p>
             <p>
               If this helps even a few people understand something they otherwise
