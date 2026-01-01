@@ -13,8 +13,10 @@ interface LectureData {
   pdf_name: string
   total_slides: number
   narrations: Record<string, string>
+  narrations_tts?: Record<string, string>
   slide_titles: string[]
   word_timings: Record<string, WordTiming[]>
+  display_sentences?: Record<string, string[]>
 }
 
 export default function LectureViewer() {
@@ -207,8 +209,13 @@ export default function LectureViewer() {
         const isSentenceLevel = avgWordLength > 50  // Sentences are typically >50 chars
 
         if (isSentenceLevel) {
+          const displaySentences = lectureData.display_sentences?.[currentSlide]
           // Show just the current sentence (sentence-level timing from Edge TTS)
-          setCurrentSubtitle(timings[currentIndex]?.word || '')
+          if (displaySentences && displaySentences[currentIndex]) {
+            setCurrentSubtitle(displaySentences[currentIndex])
+          } else {
+            setCurrentSubtitle(timings[currentIndex]?.word || '')
+          }
         } else {
           // Show chunk of ~15 words (word-level timing from Google TTS)
           const WORDS_PER_CHUNK = 15

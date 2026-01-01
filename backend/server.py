@@ -3,6 +3,7 @@
 FastAPI server for AI Lecturer system.
 """
 import os
+import re
 import asyncio
 import uuid
 from pathlib import Path
@@ -447,6 +448,38 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
                 except Exception as e:
                     print(f"❌ Regenerate failed for slide {slide_idx}: {e}")
 
+        def format_display_math(text: str) -> str:
+            """Convert spoken math into display-friendly notation."""
+            if not text:
+                return text
+            s = text
+            # R to the n -> R^n
+            s = re.sub(r'\b([A-Za-z])\s+to the\s+([A-Za-z0-9]+)\b', r'\1^\2', s, flags=re.IGNORECASE)
+            # x squared / x cubed -> x^2 / x^3
+            s = re.sub(r'\b([A-Za-z0-9]+)\s+squared\b', r'\1^2', s, flags=re.IGNORECASE)
+            s = re.sub(r'\b([A-Za-z0-9]+)\s+cubed\b', r'\1^3', s, flags=re.IGNORECASE)
+            # x superscript 2 -> x^2
+            s = re.sub(r'\b([A-Za-z0-9]+)\s+superscript\s+([A-Za-z0-9]+)\b', r'\1^\2', s, flags=re.IGNORECASE)
+            # x sub k -> x_k
+            s = re.sub(r'\b([A-Za-z0-9]+)\s+sub\s+([A-Za-z0-9]+)\b', r'\1_\2', s, flags=re.IGNORECASE)
+            # x subscript 2 -> x_2
+            s = re.sub(r'\b([A-Za-z0-9]+)\s+subscript\s+([A-Za-z0-9]+)\b', r'\1_\2', s, flags=re.IGNORECASE)
+            return s
+
+        def split_sentences(text: str) -> list:
+            sentence_pattern = re.compile(r'[^.!?]+[.!?]|[^.!?]+$')
+            return [s.strip() for s in sentence_pattern.findall(text or "") if s.strip()]
+
+        # Build display-friendly narrations and sentence lists for subtitles
+        display_narrations = {
+            slide_idx: format_display_math(narration)
+            for slide_idx, narration in all_narrations.items()
+        }
+        display_sentences = {
+            slide_idx: split_sentences(display_narrations.get(slide_idx, ""))
+            for slide_idx in all_narrations.keys()
+        }
+
         # Phase 5: Generate audio
         sessions[session_id]["status"] = {
             "phase": "generating_audio",
@@ -590,8 +623,10 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         sessions[session_id]["lecture_data"] = {
             "pdf_name": pdf_name,
             "total_slides": len(slides),
-            "narrations": all_narrations,
+            "narrations": display_narrations,
+            "narrations_tts": all_narrations,
             "slide_titles": slide_titles,
+            "display_sentences": display_sentences,
             "word_timings": all_timings
         }
 

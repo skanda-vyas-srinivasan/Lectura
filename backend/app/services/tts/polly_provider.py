@@ -57,9 +57,9 @@ class PollyTTSProvider:
 
             for sentence in sentences:
                 escaped = escape(sentence, {'"': '&quot;'})
-                escaped = re.sub(r'(?<!\d),(?!\d)', r',<break time="100ms"/>', escaped)
-                escaped = re.sub(r';', r';<break time="140ms"/>', escaped)
-                escaped = re.sub(r':', r':<break time="140ms"/>', escaped)
+                escaped = re.sub(r'(?<!\d),(?!\d)', r',<break time="75ms"/>', escaped)
+                escaped = re.sub(r';', r';<break time="105ms"/>', escaped)
+                escaped = re.sub(r':', r':<break time="105ms"/>', escaped)
 
                 rate = "102%"
                 if re.search(
@@ -73,7 +73,7 @@ class PollyTTSProvider:
                     f"<s><prosody rate='{rate}'>{escaped}</prosody></s>"
                 )
 
-            body = " <break time='200ms'/> ".join(ssml_sentences)
+            body = " <break time='150ms'/> ".join(ssml_sentences)
             return f"<speak>{body}</speak>"
 
         def to_simple_ssml(raw_text: str) -> str:
