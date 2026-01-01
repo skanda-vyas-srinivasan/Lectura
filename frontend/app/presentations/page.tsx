@@ -49,7 +49,7 @@ export default function PresentationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-sky-100">
+    <div className="min-h-screen bg-sky-100 page-fade-in">
       {/* Content */}
       <div className="min-h-screen p-8">
         <div className="max-w-7xl mx-auto">

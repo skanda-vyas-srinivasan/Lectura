@@ -24,4 +24,24 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+  .page-fade-in {
+    animation: pageFadeIn 420ms ease-out;
+  }
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-fade-in {
+    animation: none;
+  }
 }

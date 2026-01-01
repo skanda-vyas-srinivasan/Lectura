@@ -113,7 +113,7 @@ export default function Dashboard() {
   const currentPhaseIndex = phases.indexOf(status.phase)
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-10 bg-sky-100">
+    <main className="flex min-h-screen flex-col items-center justify-center p-10 bg-sky-100 page-fade-in">
       <div className="max-w-3xl w-full">
         <div className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-semibold text-slate-900">
@@ -219,6 +219,14 @@ export default function Dashboard() {
                 <span className="text-base font-semibold">Processing canceled</span>
               </div>
               <p className="text-slate-500 mt-2">You can upload a new file whenever you're ready.</p>
+              <div className="mt-4">
+                <button
+                  onClick={() => router.push('/')}
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50"
+                >
+                  Back to Upload
+                </button>
+              </div>
             </div>
           )}
 

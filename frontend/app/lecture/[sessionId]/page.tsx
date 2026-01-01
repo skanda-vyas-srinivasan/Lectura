@@ -322,7 +322,7 @@ export default function LectureViewer() {
     : `Vision: ${lectureData.enable_vision ? 'On' : 'Off'}`
 
   return (
-    <div ref={containerRef} className="relative min-h-screen bg-sky-100 text-slate-900 overflow-hidden" onMouseMove={handleMouseMove}>
+    <div ref={containerRef} className="relative min-h-screen bg-sky-100 text-slate-900 overflow-hidden page-fade-in" onMouseMove={handleMouseMove}>
 
       <div className="relative flex flex-col h-screen">
         {/* Header - hide in fullscreen */}

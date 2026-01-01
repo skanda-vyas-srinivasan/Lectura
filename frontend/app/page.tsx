@@ -110,21 +110,31 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-sky-100 text-slate-900">
+    <div className="min-h-screen bg-sky-100 text-slate-900 page-fade-in">
 
       <main className="relative min-h-screen flex items-center justify-center p-10">
         <div className="max-w-6xl w-full">
           <div className="grid gap-10 md:grid-cols-2 md:items-start">
             {/* Left column */}
-            <div className="space-y-7">
-              <div className="space-y-3">
-                <h1 className="text-5xl md:text-6xl font-semibold tracking-tight text-slate-900">
-                  Lectora
-                </h1>
+              <div className="space-y-7">
+                <div className="space-y-3">
+                  <h1 className="text-5xl md:text-6xl font-semibold tracking-tight text-slate-900">
+                    Lectora
+                  </h1>
 
-                <p className="text-lg md:text-xl text-slate-700 max-w-xl leading-relaxed">
-                  Turn slide decks into clear, narrated lectures.
-                </p>
+                  <button
+                    onClick={() => router.push('/purpose')}
+                    className="inline-flex items-center space-x-2 text-slate-600 hover:text-slate-900 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Why I Built This</span>
+                  </button>
+
+                  <p className="text-lg md:text-xl text-slate-700 max-w-xl leading-relaxed">
+                    Turn slide decks into clear, narrated lectures.
+                  </p>
 
                 <button
                   onClick={() => router.push('/presentations')}
@@ -135,6 +145,7 @@ export default function Home() {
                   </svg>
                   <span>View Your Presentations</span>
                 </button>
+
               </div>
 
               {/* Settings */}
