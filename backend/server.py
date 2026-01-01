@@ -788,11 +788,14 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
 
 
 @app.get("/api/v1/sessions")
-async def list_sessions():
-    """Get all completed sessions for the dashboard."""
+async def list_sessions(request: Request):
+    """Get completed sessions for the current client IP."""
     completed_sessions = []
+    client_ip = resolve_client_ip(request)
 
     for session_id, session_data in sessions.items():
+        if session_data.get("client_ip") != client_ip:
+            continue
         if session_data.get("status", {}).get("complete"):
             completed_sessions.append({
                 "id": session_id,
