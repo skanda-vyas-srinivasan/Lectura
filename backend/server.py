@@ -55,6 +55,22 @@ processing_tasks: Dict[str, asyncio.Task] = {}
 
 app = FastAPI(title="AI Lecturer API")
 
+
+def resolve_client_ip(request: Request) -> str:
+    """Resolve client IP with safe handling of proxy headers."""
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    real_ip = request.headers.get("X-Real-IP")
+    direct_ip = request.client.host
+
+    if settings.frontend_url.startswith("http"):
+        # In production behind a proxy, trust the first X-Forwarded-For if present.
+        if forwarded_for:
+            return forwarded_for.split(",")[0].strip()
+        if real_ip:
+            return real_ip
+    # Local/dev fallback.
+    return direct_ip
+
 # Add CORS middleware
 # Allow both local development and production URLs
 allowed_origins = [
@@ -91,7 +107,8 @@ async def startup_event():
     """Load sessions from disk on startup."""
     print("Loading sessions from disk...")
     load_sessions()
-    print(f"Loaded {len(sessions)} sessions")
+    removed = await cleanup_expired_sessions(settings.session_ttl_hours)
+    print(f"Loaded {len(sessions)} sessions (removed {removed} expired)")
 
 
 def check_rate_limit(ip: str, max_requests: int = 5, window_hours: int = 24) -> bool:
@@ -164,6 +181,39 @@ async def cleanup_session_files(session_id: str) -> None:
             pass
 
 
+async def cleanup_expired_sessions(ttl_hours: int) -> int:
+    """Remove expired sessions and their artifacts."""
+    if ttl_hours <= 0:
+        return 0
+    now = datetime.now()
+    cutoff = now - timedelta(hours=ttl_hours)
+    removed = 0
+
+    for session_id, session_data in list(sessions.items()):
+        created_at = session_data.get("created_at")
+        status = session_data.get("status", {})
+        phase = status.get("phase")
+        if phase not in {"complete", "error", "canceled"}:
+            continue
+        try:
+            created_time = datetime.fromisoformat(created_at) if created_at else None
+        except ValueError:
+            created_time = None
+        if not created_time or created_time > cutoff:
+            continue
+
+        await cleanup_session_files(session_id)
+        session_file = SESSIONS_DIR / f"{session_id}.json"
+        try:
+            await asyncio.to_thread(session_file.unlink, missing_ok=True)
+        except Exception:
+            pass
+        sessions.pop(session_id, None)
+        removed += 1
+
+    return removed
+
+
 @app.post("/api/v1/upload")
 async def upload_file(request: Request, file: UploadFile = File(...), enable_vision: bool = False, tts_provider: str = "edge", polly_voice: str = "Matthew"):
     """Upload a PDF or PPTX file and start processing.
@@ -177,16 +227,10 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     print(f"📤 UPLOAD STARTED: {file.filename}, origin: {request.headers.get('origin')}")
 
     # Get client IP (handle proxies/load balancers)
-    # X-Forwarded-For contains chain of IPs, first one is the real client
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        client_ip = forwarded_for.split(",")[0].strip()
-    else:
-        # Fallback to X-Real-IP header
-        client_ip = request.headers.get("X-Real-IP", request.client.host)
+    client_ip = resolve_client_ip(request)
     print(
         "🌐 IP DEBUG: "
-        f"resolved={client_ip} x-forwarded-for={forwarded_for} "
+        f"resolved={client_ip} x-forwarded-for={request.headers.get('X-Forwarded-For')} "
         f"x-real-ip={request.headers.get('X-Real-IP')} "
         f"client={request.client.host}"
     )

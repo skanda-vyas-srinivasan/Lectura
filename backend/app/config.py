@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # Server Configuration
     max_file_size_mb: int = 50
-    session_ttl_hours: int = 2
+    session_ttl_hours: int = 24
     max_concurrent_requests: int = 5
 
     # CORS
