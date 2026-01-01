@@ -166,7 +166,11 @@ export default function PresentationsPage() {
                             </span>
                           )}
                           <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                            {presentation.tts_provider === 'google' ? 'Google TTS' : 'Edge TTS'}
+                            {presentation.tts_provider === 'polly'
+                              ? 'AWS Polly'
+                              : presentation.tts_provider === 'google'
+                                ? 'Google TTS'
+                                : 'Edge TTS'}
                           </span>
                         </div>
 

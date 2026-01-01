@@ -17,6 +17,9 @@ interface LectureData {
   slide_titles: string[]
   word_timings: Record<string, WordTiming[]>
   display_sentences?: Record<string, string[]>
+  tts_provider?: string
+  polly_voice?: string
+  enable_vision?: boolean
 }
 
 export default function LectureViewer() {
@@ -304,6 +307,19 @@ export default function LectureViewer() {
   }
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+  const providerLabel = (() => {
+    if (!lectureData?.tts_provider) return null
+    if (lectureData.tts_provider === 'polly') {
+      return `Voice: Polly${lectureData.polly_voice ? ` (${lectureData.polly_voice})` : ''}`
+    }
+    if (lectureData.tts_provider === 'edge') {
+      return 'Voice: Edge TTS'
+    }
+    return `Voice: ${lectureData.tts_provider}`
+  })()
+  const visionLabel = lectureData?.enable_vision === undefined
+    ? null
+    : `Vision: ${lectureData.enable_vision ? 'On' : 'Off'}`
 
   return (
     <div ref={containerRef} className="relative min-h-screen bg-sky-100 text-slate-900 overflow-hidden" onMouseMove={handleMouseMove}>
@@ -322,7 +338,9 @@ export default function LectureViewer() {
               </div>
               <div>
                 <h1 className="text-sm font-semibold text-slate-900">{lectureData.pdf_name}</h1>
-                <p className="text-xs text-slate-500">Lecture Viewer</p>
+                <p className="text-xs text-slate-500">
+                  {['Lecture Viewer', providerLabel, visionLabel].filter(Boolean).join(' • ')}
+                </p>
               </div>
             </div>
 

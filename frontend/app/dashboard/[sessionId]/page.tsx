@@ -20,7 +20,7 @@ export default function Dashboard() {
   const [status, setStatus] = useState<ProcessingStatus>({
     phase: 'starting',
     progress: 0,
-    message: 'Initializing...',
+    message: 'Getting things ready...',
     complete: false
   })
   const [error, setError] = useState<string | null>(null)
@@ -61,12 +61,12 @@ export default function Dashboard() {
 
   const getPhaseLabel = (phase: string) => {
     const labels: Record<string, string> = {
-      parsing: 'Parsing PDF',
-      extracting_images: 'Extracting Slide Images',
-      building_context: 'Building Global Context',
-      generating_narrations: 'Generating Narrations',
-      generating_audio: 'Generating Audio Files',
-      creating_viewer: 'Creating Viewer',
+      parsing: 'Reading slides',
+      extracting_images: 'Rendering slides',
+      building_context: 'Understanding the lecture',
+      generating_narrations: 'Writing narration',
+      generating_audio: 'Recording audio',
+      creating_viewer: 'Finalizing lecture',
       complete: 'Complete!'
     }
     return labels[phase] || phase
@@ -91,7 +91,7 @@ export default function Dashboard() {
             Processing Your Lecture
           </h1>
           <p className="text-base text-slate-600 mt-3">
-            This may take a few minutes.
+            This can take a few minutes for large decks.
           </p>
         </div>
 
@@ -149,6 +149,14 @@ export default function Dashboard() {
               )
             })}
           </div>
+
+          {status.phase === 'error' && (
+            <div className="mt-6 bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
+              <p className="font-semibold">Processing failed</p>
+              <p className="text-sm mt-1">{status.message}</p>
+              <p className="text-xs text-red-600 mt-2">Try re-uploading or reducing slide count.</p>
+            </div>
+          )}
 
           {status.complete && (
             <div className="mt-8 text-center">

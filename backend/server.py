@@ -185,7 +185,7 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
         "status": {
             "phase": "starting",
             "progress": 0,
-            "message": "Starting processing...",
+            "message": "Preparing your lecture...",
             "complete": False
         }
     }
@@ -223,7 +223,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         sessions[session_id]["status"] = {
             "phase": "parsing",
             "progress": 10,
-            "message": "Parsing PDF...",
+            "message": "Reading slides...",
             "complete": False
         }
 
@@ -239,7 +239,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         sessions[session_id]["status"] = {
             "phase": "extracting_images",
             "progress": 20,
-            "message": "Extracting slide images...",
+            "message": "Rendering slides...",
             "complete": False,
             "total_slides": len(slides)
         }
@@ -272,7 +272,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         sessions[session_id]["status"] = {
             "phase": "building_context",
             "progress": 35,
-            "message": "Analyzing lecture structure...",
+            "message": "Understanding the lecture...",
             "complete": False,
             "total_slides": len(slides)
         }
@@ -311,7 +311,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         sessions[session_id]["status"] = {
             "phase": "generating_narrations",
             "progress": 55,
-            "message": "Generating narrations...",
+            "message": "Writing narration...",
             "complete": False,
             "total_slides": len(slides)
         }
@@ -484,7 +484,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         sessions[session_id]["status"] = {
             "phase": "generating_audio",
             "progress": 75,
-            "message": "Generating audio files...",
+            "message": "Recording audio...",
             "complete": False,
             "total_slides": len(slides)
         }
@@ -612,7 +612,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         sessions[session_id]["status"] = {
             "phase": "creating_viewer",
             "progress": 95,
-            "message": "Finalizing...",
+            "message": "Finalizing lecture...",
             "complete": False,
             "total_slides": len(slides)
         }
@@ -626,6 +626,9 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
             "narrations": display_narrations,
             "narrations_tts": all_narrations,
             "slide_titles": slide_titles,
+            "tts_provider": tts_provider,
+            "polly_voice": polly_voice,
+            "enable_vision": enable_vision,
             "display_sentences": display_sentences,
             "word_timings": all_timings
         }
@@ -634,7 +637,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         sessions[session_id]["status"] = {
             "phase": "complete",
             "progress": 100,
-            "message": "Processing complete!",
+            "message": "Lecture ready!",
             "complete": True,
             "total_slides": len(slides)
         }
@@ -646,7 +649,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
         sessions[session_id]["status"] = {
             "phase": "error",
             "progress": 0,
-            "message": f"Error: {str(e)}",
+            "message": f"We hit a snag while processing this lecture. {str(e)}",
             "complete": False
         }
         print(f"Error processing session {session_id}: {e}")

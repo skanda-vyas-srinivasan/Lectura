@@ -36,26 +36,26 @@ class EdgeTTSProvider(TTSProvider):
         """
         self.voice = voice
 
-    def _to_ssml(self, text: str) -> str:
+    def _to_ssml(self, text: str, expressive: bool = True) -> str:
         """Convert plain text into SSML with more natural pacing and emphasis."""
         sentence_pattern = re.compile(r'[^.!?]+[.!?]|[^.!?]+$')
         sentences = [s.strip() for s in sentence_pattern.findall(text) if s.strip()]
         ssml_sentences = []
 
         def contour(escaped_sentence: str) -> str:
-            # Add a gentle pitch contour: lift then drop.
+            # Add a stronger pitch contour for expressiveness.
             parts = re.split(r'([,;:])', escaped_sentence, maxsplit=1)
             if len(parts) >= 3:
                 head = parts[0] + parts[1]
                 tail = parts[2]
                 return (
-                    f"<prosody pitch='+2%'>{head}</prosody>"
-                    f"<prosody pitch='-1%'>{tail}</prosody>"
+                    f"<prosody pitch='+6%' volume='+1dB'>{head}</prosody>"
+                    f"<prosody pitch='-4%'>{tail}</prosody>"
                 )
             mid = len(escaped_sentence) // 2
             return (
-                f"<prosody pitch='+2%'>{escaped_sentence[:mid]}</prosody>"
-                f"<prosody pitch='-1%'>{escaped_sentence[mid:]}</prosody>"
+                f"<prosody pitch='+6%' volume='+1dB'>{escaped_sentence[:mid]}</prosody>"
+                f"<prosody pitch='-4%'>{escaped_sentence[mid:]}</prosody>"
             )
 
         for sentence in sentences:
@@ -73,9 +73,9 @@ class EdgeTTSProvider(TTSProvider):
                 escaped
             )
             # Short pauses after commas/semicolons/colons (avoid 1,000).
-            escaped = re.sub(r'(?<!\d),(?!\d)', r',<break time="100ms"/>', escaped)
-            escaped = re.sub(r';', r';<break time="140ms"/>', escaped)
-            escaped = re.sub(r':', r':<break time="140ms"/>', escaped)
+            escaped = re.sub(r'(?<!\d),(?!\d)', r',<break time="90ms"/>', escaped)
+            escaped = re.sub(r';', r';<break time="120ms"/>', escaped)
+            escaped = re.sub(r':', r':<break time="120ms"/>', escaped)
 
             # Slow down math-heavy sentences slightly.
             if re.search(
@@ -88,8 +88,23 @@ class EdgeTTSProvider(TTSProvider):
             escaped = contour(escaped)
             ssml_sentences.append(f"<s>{escaped}</s>")
 
-        body = " <break time='200ms'/> ".join(ssml_sentences)
-        return f"<speak><prosody rate='102%' pitch='+1%'>{body}</prosody></speak>"
+        body = " <break time='180ms'/> ".join(ssml_sentences)
+        if expressive:
+            return (
+                "<speak version='1.0' xml:lang='en-US' "
+                "xmlns='http://www.w3.org/2001/10/synthesis' "
+                "xmlns:mstts='http://www.w3.org/2001/mstts'>"
+                "<mstts:express-as style='cheerful' styledegree='1.8'>"
+                f"<prosody rate='104%'>{body}</prosody>"
+                "</mstts:express-as>"
+                "</speak>"
+            )
+        return (
+            "<speak version='1.0' xml:lang='en-US' "
+            "xmlns='http://www.w3.org/2001/10/synthesis'>"
+            f"<prosody rate='104%'>{body}</prosody>"
+            "</speak>"
+        )
 
     async def generate_audio(
         self,
@@ -115,16 +130,27 @@ class EdgeTTSProvider(TTSProvider):
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Generate audio with word timing using SubMaker
-        ssml = self._to_ssml(text)
-        communicate = edge_tts.Communicate(ssml, voice_to_use)
+        ssml = self._to_ssml(text, expressive=True)
         submaker = edge_tts.SubMaker()
 
-        with open(str(output_path), "wb") as audio_file:
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    audio_file.write(chunk["data"])
-                elif chunk["type"] in ["WordBoundary", "SentenceBoundary"]:
-                    submaker.feed(chunk)
+        try:
+            communicate = edge_tts.Communicate(ssml, voice_to_use)
+            with open(str(output_path), "wb") as audio_file:
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        audio_file.write(chunk["data"])
+                    elif chunk["type"] in ["WordBoundary", "SentenceBoundary"]:
+                        submaker.feed(chunk)
+        except Exception:
+            # Fallback if expressive SSML isn't supported by the voice.
+            ssml = self._to_ssml(text, expressive=False)
+            communicate = edge_tts.Communicate(ssml, voice_to_use)
+            with open(str(output_path), "wb") as audio_file:
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        audio_file.write(chunk["data"])
+                    elif chunk["type"] in ["WordBoundary", "SentenceBoundary"]:
+                        submaker.feed(chunk)
 
         # Extract sentence-level timings from SubMaker cues
         # Edge TTS only provides sentence boundaries, so we show full sentences
