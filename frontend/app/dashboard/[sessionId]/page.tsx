@@ -87,28 +87,28 @@ export default function Dashboard() {
     <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-sky-100">
       <div className="max-w-4xl w-full">
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-sky-600 to-blue-700">
+          <h1 className="text-4xl md:text-5xl font-semibold text-slate-900">
             Processing Your Lecture
           </h1>
-          <p className="text-xl text-slate-700">
-            This may take a few minutes...
+          <p className="text-lg text-slate-600 mt-3">
+            This may take a few minutes.
           </p>
         </div>
 
-        <div className="bg-slate-900/85 rounded-2xl p-8 border border-white/10 text-white">
+        <div className="bg-white rounded-2xl p-8 border border-slate-200 text-slate-900">
           {/* Current phase indicator */}
           <div className="mb-8 text-center">
-            <div className="inline-flex items-center space-x-3 bg-blue-950/50 px-6 py-3 rounded-full border border-blue-500">
+            <div className="inline-flex items-center space-x-3 bg-sky-50 px-6 py-3 rounded-full border border-sky-200">
               {!status.complete && (
-                <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+                <div className="w-2.5 h-2.5 bg-sky-500 rounded-full animate-pulse"></div>
               )}
-              <span className="text-lg font-semibold text-blue-300">
+              <span className="text-base font-semibold text-sky-700">
                 {getPhaseLabel(status.phase)}
               </span>
             </div>
-            <p className="text-slate-300 mt-4">{status.message}</p>
+            <p className="text-slate-600 mt-4">{status.message}</p>
             {status.total_slides && (
-              <p className="text-sm text-slate-400 mt-2">
+              <p className="text-sm text-slate-500 mt-2">
                 Total slides: {status.total_slides}
               </p>
             )}
@@ -116,13 +116,13 @@ export default function Dashboard() {
 
           {/* Progress bar */}
           <div className="mb-8">
-            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-sky-500 to-blue-600 h-full transition-all duration-500 ease-out"
+                className="bg-sky-500 h-full transition-all duration-500 ease-out"
                 style={{ width: `${status.progress}%` }}
               ></div>
             </div>
-            <p className="text-center text-sm text-slate-300 mt-2">
+            <p className="text-center text-sm text-slate-500 mt-2">
               {Math.round(status.progress)}% complete
             </p>
           </div>
@@ -137,19 +137,19 @@ export default function Dashboard() {
                 <div
                   key={phase}
                   className={`flex items-center space-x-3 p-3 rounded-lg transition-all ${
-                    isCurrent ? 'bg-blue-950/30 border border-blue-500/30' : 'bg-slate-700/30'
+                    isCurrent ? 'bg-sky-50 border border-sky-200' : 'bg-slate-50'
                   }`}
                 >
                   {isComplete ? (
-                    <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-6 h-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   ) : isCurrent ? (
-                    <div className="w-6 h-6 border-3 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-6 h-6 border-2 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    <div className="w-6 h-6 border-2 border-white/20 rounded-full"></div>
+                    <div className="w-6 h-6 border-2 border-slate-200 rounded-full"></div>
                   )}
-                  <span className={`${isComplete ? 'text-emerald-200' : isCurrent ? 'text-sky-200 font-semibold' : 'text-slate-400'}`}>
+                  <span className={`${isComplete ? 'text-emerald-600' : isCurrent ? 'text-sky-700 font-semibold' : 'text-slate-500'}`}>
                     {getPhaseLabel(phase)}
                   </span>
                 </div>
@@ -159,20 +159,20 @@ export default function Dashboard() {
 
           {status.complete && (
             <div className="mt-8 text-center">
-              <div className="inline-flex items-center space-x-2 text-emerald-400">
+              <div className="inline-flex items-center space-x-2 text-emerald-600">
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span className="text-xl font-semibold">Processing Complete!</span>
               </div>
-              <p className="text-slate-300 mt-2">Redirecting to viewer...</p>
+              <p className="text-slate-500 mt-2">Redirecting to viewer...</p>
             </div>
           )}
 
           {error && (
-            <div className="mt-6 bg-red-900/50 border border-red-500 text-red-200 px-6 py-4 rounded-lg">
+            <div className="mt-6 bg-red-50 border border-red-200 text-red-600 px-6 py-4 rounded-lg">
               <p className="font-semibold">Error:</p>
-              <p>{error}</p>
+              <p className="text-sm text-red-600 mt-1">{error}</p>
             </div>
           )}
         </div>

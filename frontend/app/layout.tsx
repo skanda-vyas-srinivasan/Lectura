@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${spaceGrotesk.className} bg-sky-100 text-white`}>{children}</body>
+      <body className={`${spaceGrotesk.className} bg-sky-100 text-slate-900`}>{children}</body>
     </html>
   )
 }

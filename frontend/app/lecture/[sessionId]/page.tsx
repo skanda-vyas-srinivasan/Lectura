@@ -285,8 +285,8 @@ export default function LectureViewer() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-sky-100">
         <div className="flex flex-col items-center space-y-4">
-          <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-          <p className="text-xl text-gray-400">Loading lecture...</p>
+          <div className="w-12 h-12 border-2 border-sky-200 border-t-sky-500 rounded-full animate-spin"></div>
+          <p className="text-lg text-slate-600">Loading lecture...</p>
         </div>
       </div>
     )
@@ -295,35 +295,29 @@ export default function LectureViewer() {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
 
   return (
-    <div ref={containerRef} className="relative min-h-screen bg-sky-100 text-white overflow-hidden" onMouseMove={handleMouseMove}>
-      {/* Ambient background */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-sky-100 via-sky-200 to-blue-200"></div>
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-sky-300/40 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-300/40 rounded-full blur-3xl"></div>
-      </div>
+    <div ref={containerRef} className="relative min-h-screen bg-sky-100 text-slate-900 overflow-hidden" onMouseMove={handleMouseMove}>
 
       <div className="relative flex flex-col h-screen">
         {/* Header - hide in fullscreen */}
         {!isFullscreen && (
-        <header className="relative z-10 bg-slate-900/85 backdrop-blur-xl border-b border-white/10">
+        <header className="relative z-10 bg-white border-b border-slate-200">
           <div className="px-8 py-6 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">{lectureData.pdf_name}</h1>
-                <p className="text-sm text-gray-400">AI Lecture Viewer</p>
+                <h1 className="text-lg font-semibold text-slate-900">{lectureData.pdf_name}</h1>
+                <p className="text-sm text-slate-500">Lecture Viewer</p>
               </div>
             </div>
 
             <button
               onClick={() => setShowTranscript(!showTranscript)}
-              className="group relative px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all"
+              className="group relative px-5 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-700 hover:text-slate-900 hover:border-slate-300 transition-colors"
             >
               <span className="flex items-center space-x-2 text-sm font-semibold">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -344,8 +338,7 @@ export default function LectureViewer() {
           }`}>
             {/* Slide card */}
             <div className="relative w-full h-full max-w-6xl flex flex-col">
-              <div className={`absolute inset-0 bg-gradient-to-br from-sky-500/20 to-blue-500/20 rounded-3xl blur-2xl opacity-50 ${isFullscreen ? 'hidden' : ''}`}></div>
-              <div className={`relative flex-1 bg-slate-900/85 backdrop-blur-xl border border-white/20 shadow-2xl overflow-hidden ${isFullscreen ? 'rounded-none border-0' : 'rounded-3xl p-4'}`}>
+              <div className={`relative flex-1 bg-white border border-slate-200 shadow-sm overflow-hidden ${isFullscreen ? 'rounded-none border-0' : 'rounded-2xl p-4'}`}>
                 <img
                   src={`${API_URL}/api/v1/session/${sessionId}/slide/${currentSlide}?v=${slideCacheBuster}`}
                   alt={`Slide ${currentSlide + 1}`}
@@ -354,22 +347,22 @@ export default function LectureViewer() {
                 />
 
                 {(audioLoading || audioError || slideError) && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50">
-                    <div className="flex items-center space-x-3 bg-slate-900/70 border border-white/10 rounded-xl px-5 py-3">
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+                    <div className="flex items-center space-x-3 bg-white border border-slate-200 rounded-lg px-5 py-3">
                       {(audioError || slideError) ? (
-                        <svg className="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       ) : (
-                        <div className="w-4 h-4 border-2 border-blue-400/30 border-t-blue-400 rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin"></div>
                       )}
-                      <span className="text-sm text-gray-200">
+                      <span className="text-sm text-slate-700">
                         {audioError || slideError || 'Loading audio...'}
                       </span>
                       {audioError && (
                         <button
                           onClick={retryAudio}
-                          className="ml-2 text-xs font-semibold text-blue-300 hover:text-blue-200 transition-colors"
+                          className="ml-2 text-xs font-semibold text-sky-700 hover:text-sky-800 transition-colors"
                         >
                           Retry
                         </button>
@@ -377,7 +370,7 @@ export default function LectureViewer() {
                       {slideError && (
                         <button
                           onClick={retrySlide}
-                          className="ml-2 text-xs font-semibold text-blue-300 hover:text-blue-200 transition-colors"
+                          className="ml-2 text-xs font-semibold text-sky-700 hover:text-sky-800 transition-colors"
                         >
                           Retry
                         </button>
@@ -388,8 +381,8 @@ export default function LectureViewer() {
 
                 {/* Subtitles - overlay inside slide */}
                 {isPlaying && currentSubtitle && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-slate-900/60 rounded-lg px-6 py-3 transition-all duration-300">
-                    <p className="text-white text-base text-center leading-relaxed font-medium">
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-white/80 border border-slate-200 rounded-lg px-6 py-3 transition-all duration-300">
+                    <p className="text-slate-800 text-base text-center leading-relaxed font-medium">
                       {currentSubtitle}
                     </p>
                   </div>
@@ -400,22 +393,22 @@ export default function LectureViewer() {
 
           {/* Transcript panel - hide in fullscreen */}
           {!isFullscreen && (
-          <div className={`absolute right-0 top-0 h-full bg-slate-900/85 backdrop-blur-2xl border-l border-white/10 transition-all duration-300 overflow-hidden ${
+          <div className={`absolute right-0 top-0 h-full bg-white border-l border-slate-200 transition-all duration-300 overflow-hidden ${
             showTranscript ? 'w-1/3' : 'w-0'
           }`}>
             {showTranscript && (
               <div className="h-full flex flex-col">
-                <div className="p-8 border-b border-white/10">
+                <div className="p-8 border-b border-slate-200">
                   <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                    <h2 className="text-lg font-bold text-white">Transcript</h2>
+                    <div className="w-2 h-2 bg-sky-500 rounded-full animate-pulse"></div>
+                    <h2 className="text-lg font-semibold text-slate-900">Transcript</h2>
                   </div>
-                  <p className="text-sm text-sky-300 font-medium">
+                  <p className="text-sm text-slate-600 font-medium">
                     Slide {currentSlide + 1}: {lectureData.slide_titles?.[currentSlide] || `Slide ${currentSlide + 1}`}
                   </p>
                 </div>
                 <div className="flex-1 overflow-y-auto p-8">
-                  <p className="text-gray-300 leading-relaxed text-lg">
+                  <p className="text-slate-700 leading-relaxed text-lg">
                     {lectureData.narrations?.[currentSlide] || 'No transcript available for this slide.'}
                   </p>
                 </div>
@@ -426,14 +419,14 @@ export default function LectureViewer() {
         </div>
 
         {/* Controls */}
-        <div className={`relative z-10 bg-slate-900/90 backdrop-blur-2xl border-t border-white/10 transition-all duration-300 ${
+        <div className={`relative z-10 bg-white border-t border-slate-200 transition-all duration-300 ${
           isFullscreen ? (showControls ? 'translate-y-0' : 'translate-y-full') : ''
         } ${isFullscreen ? 'absolute bottom-0 left-0 right-0' : ''}`}>
           <div className="px-8 py-6 space-y-6">
             {/* Progress bar */}
             <div className="relative">
               <div
-                className="w-full h-2 bg-white/10 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all"
+                className="w-full h-2 bg-slate-100 rounded-full overflow-hidden cursor-pointer hover:h-3 transition-all"
                 onClick={handleProgressBarClick}
               >
                 <div
@@ -441,7 +434,7 @@ export default function LectureViewer() {
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
-              <div className="absolute -top-1 left-0 right-0 flex justify-between text-xs text-gray-400 font-mono">
+              <div className="absolute -top-1 left-0 right-0 flex justify-between text-xs text-slate-500 font-mono">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
@@ -453,7 +446,7 @@ export default function LectureViewer() {
                 <button
                   onClick={previousSlide}
                   disabled={currentSlide === 0}
-                  className="group relative px-5 py-3 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-xl transition-all disabled:hover:bg-white/5"
+                  className="group relative px-5 py-3 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-200 rounded-lg transition-colors"
                 >
                   <div className="flex items-center space-x-2">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -465,7 +458,7 @@ export default function LectureViewer() {
 
                 <button
                   onClick={togglePlayPause}
-                  className="relative px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-blue-500/25"
+                  className="relative px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg transition-colors"
                 >
                   <div className="flex items-center space-x-3">
                     {isPlaying ? (
@@ -490,7 +483,7 @@ export default function LectureViewer() {
                 <button
                   onClick={nextSlide}
                   disabled={currentSlide === lectureData.total_slides - 1}
-                  className="group relative px-5 py-3 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-xl transition-all disabled:hover:bg-white/5"
+                  className="group relative px-5 py-3 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-200 rounded-lg transition-colors"
                 >
                   <div className="flex items-center space-x-2">
                     <span className="font-semibold text-sm">Next</span>
@@ -502,20 +495,20 @@ export default function LectureViewer() {
               </div>
 
               <div className="flex items-center space-x-8">
-                <div className="flex items-center space-x-3 bg-white/5 px-5 py-3 rounded-xl border border-white/10">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="flex items-center space-x-3 bg-white px-5 py-3 rounded-lg border border-slate-200">
+                  <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                   <span className="text-lg font-mono">
-                    <span className="text-white font-bold">{currentSlide + 1}</span>
-                    <span className="text-gray-400"> / </span>
-                    <span className="text-gray-400">{lectureData.total_slides}</span>
+                    <span className="text-slate-900 font-bold">{currentSlide + 1}</span>
+                    <span className="text-slate-400"> / </span>
+                    <span className="text-slate-400">{lectureData.total_slides}</span>
                   </span>
                 </div>
 
                 <button
                   onClick={toggleFullscreen}
-                  className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 px-5 py-3 rounded-xl border border-white/10 transition-all"
+                  className="flex items-center space-x-2 bg-white hover:bg-slate-50 px-5 py-3 rounded-lg border border-slate-200 transition-colors"
                 >
                   {isFullscreen ? (
                     <>

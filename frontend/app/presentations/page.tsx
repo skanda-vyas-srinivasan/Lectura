@@ -50,14 +50,8 @@ export default function PresentationsPage() {
 
   return (
     <div className="min-h-screen bg-sky-100">
-      {/* Background */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-sky-100 via-sky-200 to-blue-200"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a12_1px,transparent_1px),linear-gradient(to_bottom,#0f172a12_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
-      </div>
-
       {/* Content */}
-      <div className="relative min-h-screen p-8">
+      <div className="min-h-screen p-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-12">
@@ -71,13 +65,11 @@ export default function PresentationsPage() {
               <span>Back to Home</span>
             </button>
 
-            <h1 className="text-5xl font-black mb-4">
-              <span className="bg-gradient-to-r from-sky-600 via-blue-700 to-cyan-600 text-transparent bg-clip-text">
-                Your Presentations
-              </span>
+            <h1 className="text-4xl md:text-5xl font-semibold text-slate-900 mb-4">
+              Your Presentations
             </h1>
-            <p className="text-xl text-slate-700">
-              All your generated lectures in one place
+            <p className="text-lg text-slate-600">
+              All your generated lectures in one place.
             </p>
           </div>
 
@@ -93,14 +85,14 @@ export default function PresentationsPage() {
 
           {/* Error state */}
           {error && (
-            <div className="bg-red-500/10 backdrop-blur-xl border border-red-500/20 rounded-2xl px-6 py-4">
+            <div className="bg-red-50 border border-red-200 rounded-2xl px-6 py-4">
               <div className="flex items-start space-x-3">
-                <svg className="w-5 h-5 text-red-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-red-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p className="text-sm font-semibold text-red-300">Error</p>
-                  <p className="text-sm text-red-400/80 mt-1">{error}</p>
+                  <p className="text-sm font-semibold text-red-700">Error</p>
+                  <p className="text-sm text-red-600 mt-1">{error}</p>
                 </div>
               </div>
             </div>
@@ -111,15 +103,15 @@ export default function PresentationsPage() {
             <>
               {presentations.length === 0 ? (
                 <div className="text-center py-20">
-                  <div className="inline-block bg-slate-900/85 backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-white">
-                    <svg className="w-20 h-20 text-gray-600 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="inline-block bg-white border border-slate-200 rounded-2xl p-12 text-slate-900">
+                    <svg className="w-16 h-16 text-slate-300 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <p className="text-xl font-semibold text-slate-200 mb-2">No presentations yet</p>
-                    <p className="text-slate-400 mb-6">Upload your first lecture to get started</p>
+                    <p className="text-xl font-semibold text-slate-900 mb-2">No presentations yet</p>
+                    <p className="text-slate-600 mb-6">Upload your first lecture to get started.</p>
                     <button
                       onClick={() => router.push('/')}
-                      className="inline-flex items-center space-x-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all transform hover:scale-105"
+                      className="inline-flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 px-8 rounded-lg transition-colors"
                     >
                       <span>Upload Lecture</span>
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -134,34 +126,31 @@ export default function PresentationsPage() {
                     <div
                       key={presentation.id}
                       onClick={() => router.push(`/lecture/${presentation.id}`)}
-                      className="group relative bg-slate-900/85 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:border-sky-300/60 hover:bg-sky-500/10 transition-all cursor-pointer transform hover:scale-105 text-white"
+                      className="group relative bg-white border border-slate-200 rounded-2xl p-6 hover:border-slate-300 transition-colors cursor-pointer"
                     >
-                      {/* Glow effect on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-sky-400 via-blue-500 to-cyan-400 rounded-2xl blur-xl opacity-0 group-hover:opacity-20 transition-opacity"></div>
-
                       <div className="relative">
                         {/* Icon */}
-                        <div className="w-12 h-12 bg-gradient-to-br from-sky-500/20 to-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                          <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mb-4">
+                          <svg className="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </div>
 
                         {/* Filename */}
-                        <h3 className="text-lg font-bold text-white mb-2 truncate">
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2 truncate">
                           {presentation.filename}
                         </h3>
 
                         {/* Metadata */}
                         <div className="space-y-2 mb-4">
-                          <div className="flex items-center space-x-2 text-sm text-slate-300">
+                          <div className="flex items-center space-x-2 text-sm text-slate-600">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <span>{formatDate(presentation.created_at)}</span>
                           </div>
 
-                          <div className="flex items-center space-x-2 text-sm text-slate-300">
+                          <div className="flex items-center space-x-2 text-sm text-slate-600">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
@@ -172,18 +161,18 @@ export default function PresentationsPage() {
                         {/* Tags */}
                         <div className="flex flex-wrap gap-2">
                           {presentation.enable_vision && (
-                            <span className="text-xs bg-sky-500/20 text-sky-200 px-2 py-1 rounded-full">
+                            <span className="text-xs bg-sky-100 text-sky-700 px-2 py-1 rounded-full">
                               Vision
                             </span>
                           )}
-                          <span className="text-xs bg-blue-500/20 text-blue-200 px-2 py-1 rounded-full">
+                          <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
                             {presentation.tts_provider === 'google' ? 'Google TTS' : 'Edge TTS'}
                           </span>
                         </div>
 
                         {/* Play icon */}
-                        <div className="absolute top-0 right-0 w-10 h-10 bg-gradient-to-br from-sky-500 to-blue-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <svg className="w-5 h-5 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <div className="absolute top-0 right-0 w-9 h-9 bg-slate-900 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M8 5v14l11-7z" />
                           </svg>
                         </div>
