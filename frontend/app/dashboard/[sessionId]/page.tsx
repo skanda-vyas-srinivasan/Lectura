@@ -130,7 +130,6 @@ export default function Dashboard() {
             <p className="text-sm font-semibold text-slate-900">
               {getPhaseLabel(status.phase)}
             </p>
-            <p className="text-slate-600 mt-3 text-sm">{status.message}</p>
             {status.total_slides && (
               <p className="text-xs text-slate-500 mt-2">
                 Total slides: {status.total_slides}
