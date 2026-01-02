@@ -82,37 +82,63 @@ class PollyTTSProvider:
         text_type = "ssml"
         engine = self.engine
 
-        # Generate audio
-        try:
-            audio_response = self.client.synthesize_speech(
-                Text=ssml,
+        def synthesize(ssml_payload: str):
+            return self.client.synthesize_speech(
+                Text=ssml_payload,
                 TextType=text_type,
                 OutputFormat='mp3',
                 VoiceId=self.voice_id,
                 Engine=engine
             )
+
+        def chunk_text(raw_text: str, max_chars: int = 2500) -> list[str]:
+            sentence_pattern = re.compile(r'[^.!?]+[.!?]|[^.!?]+$')
+            sentences = [s.strip() for s in sentence_pattern.findall(raw_text) if s.strip()]
+            chunks = []
+            current = []
+            current_len = 0
+            for sentence in sentences:
+                if current and current_len + len(sentence) + 1 > max_chars:
+                    chunks.append(" ".join(current))
+                    current = []
+                    current_len = 0
+                current.append(sentence)
+                current_len += len(sentence) + 1
+            if current:
+                chunks.append(" ".join(current))
+            return chunks
+
+        # Generate audio
+        chunked = False
+        try:
+            audio_response = synthesize(ssml)
+            audio_bytes = audio_response['AudioStream'].read()
         except ClientError as exc:
             error_message = str(exc)
-            if "InvalidSsmlException" in error_message or "Unsupported Neural feature" in error_message:
+            if "TextLengthExceededException" in error_message:
+                chunked = True
+                audio_bytes = b""
+                for chunk in chunk_text(text):
+                    chunk_ssml = to_ssml(chunk)
+                    chunk_audio = synthesize(chunk_ssml)['AudioStream'].read()
+                    audio_bytes += chunk_audio
+            elif "InvalidSsmlException" in error_message or "Unsupported Neural feature" in error_message:
                 ssml = to_simple_ssml(text)
-                text_type = "ssml"
                 if engine == "neural":
                     engine = "standard"
-                audio_response = self.client.synthesize_speech(
-                    Text=ssml,
-                    TextType=text_type,
-                    OutputFormat='mp3',
-                    VoiceId=self.voice_id,
-                    Engine=engine
-                )
+                audio_response = synthesize(ssml)
+                audio_bytes = audio_response['AudioStream'].read()
             else:
                 raise
 
         # Save audio stream to file
         with open(output_path, 'wb') as f:
-            f.write(audio_response['AudioStream'].read())
+            f.write(audio_bytes)
 
         # Get speech marks for word-level timing
+        if chunked:
+            return {"timings": [], "timings_unavailable": True}
+
         marks_response = self.client.synthesize_speech(
             Text=ssml,
             TextType=text_type,

@@ -20,6 +20,7 @@ interface LectureData {
   tts_provider?: string
   polly_voice?: string
   enable_vision?: boolean
+  subtitle_unavailable?: number[]
 }
 
 export default function LectureViewer() {
@@ -336,6 +337,7 @@ export default function LectureViewer() {
   const visionLabel = lectureData?.enable_vision === undefined
     ? null
     : `Vision: ${lectureData.enable_vision ? 'On' : 'Off'}`
+  const subtitleUnavailable = lectureData?.subtitle_unavailable?.includes(currentSlide) ?? false
 
   return (
     <div ref={containerRef} className="relative min-h-screen bg-sky-100 text-slate-900 overflow-hidden page-fade-in" onMouseMove={handleMouseMove}>
@@ -425,13 +427,19 @@ export default function LectureViewer() {
                 )}
 
                 {/* Subtitles - overlay inside slide */}
-                {isPlaying && showSubtitles && currentSubtitle && (
+                {isPlaying && showSubtitles && (currentSubtitle || subtitleUnavailable) && (
                   <div className={`absolute left-1/2 -translate-x-1/2 w-[90%] max-w-4xl bg-white/90 border border-slate-200 rounded-lg px-5 py-2.5 transition-all duration-300 ${
                     isFullscreen ? (showControls ? 'bottom-6' : 'bottom-2') : 'bottom-4'
                   }`}>
-                    <p className="text-slate-800 text-sm text-center leading-relaxed font-medium">
-                      {currentSubtitle}
-                    </p>
+                    {subtitleUnavailable ? (
+                      <p className="text-slate-600 text-sm text-center leading-relaxed font-medium">
+                        Subtitles are unavailable for this slide.
+                      </p>
+                    ) : (
+                      <p className="text-slate-800 text-sm text-center leading-relaxed font-medium">
+                        {currentSubtitle}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

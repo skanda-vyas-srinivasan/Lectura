@@ -766,6 +766,7 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
 
         # Store word timings for each slide
         all_timings = {}
+        subtitle_unavailable = []
 
         print(f"🔊 Starting audio generation for {len(all_narrations)} narrations...")
         tts_semaphore = asyncio.Semaphore(3)
@@ -790,7 +791,9 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
 
                     output_file = output_audio_dir / f"slide_{slide_idx:03d}.mp3"
                     timing_data = await tts.generate_audio(clean_narration, str(output_file))
-                    all_timings[slide_idx] = timing_data["timings"]
+                    all_timings[slide_idx] = timing_data.get("timings", [])
+                    if timing_data.get("timings_unavailable"):
+                        subtitle_unavailable.append(slide_idx)
                 except Exception as e:
                     print(f"❌ Failed to generate audio for slide {slide_idx}: {e}")
 
@@ -822,7 +825,8 @@ async def process_lecture(session_id: str, pdf_path: str, enable_vision: bool = 
             "polly_voice": polly_voice,
             "enable_vision": enable_vision,
             "display_sentences": display_sentences,
-            "word_timings": all_timings
+            "word_timings": all_timings,
+            "subtitle_unavailable": subtitle_unavailable
         }
 
         # Complete
