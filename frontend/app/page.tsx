@@ -112,7 +112,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-sky-100 text-slate-900 page-fade-in">
 
-      <main className="relative min-h-screen flex items-center justify-center p-10">
+      <main className="relative min-h-screen flex flex-col items-center justify-center p-10">
         <div className="max-w-6xl w-full">
           <div className="grid gap-10 md:grid-cols-2 md:items-start">
             {/* Left column */}
@@ -274,6 +274,9 @@ export default function Home() {
             </div>
           </div>
 
+        </div>
+        <div className="mt-10 text-xs text-slate-500">
+          Update log: added PPTX support
         </div>
       </main>
 
