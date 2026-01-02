@@ -65,6 +65,7 @@ export default function Dashboard() {
 
   const getPhaseLabel = (phase: string) => {
     const labels: Record<string, string> = {
+      converting: 'Converting PPTX',
       parsing: 'Reading slides',
       extracting_images: 'Rendering slides',
       building_context: 'Understanding the lecture',
@@ -78,6 +79,7 @@ export default function Dashboard() {
   }
 
   const phases = [
+    'converting',
     'parsing',
     'extracting_images',
     'building_context',

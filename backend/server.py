@@ -3,6 +3,7 @@
 FastAPI server for AI Lecturer system.
 """
 import os
+import subprocess
 import re
 import asyncio
 import uuid
@@ -47,6 +48,35 @@ def load_sessions():
                 sessions[session_id] = session_data
         except Exception as e:
             print(f"Error loading session {session_file}: {e}")
+
+
+def convert_pptx_to_pdf(pptx_path: Path) -> Path:
+    """Convert a PPTX file to PDF using LibreOffice."""
+    output_dir = pptx_path.parent
+    try:
+        subprocess.run(
+            [
+                "soffice",
+                "--headless",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+                str(output_dir),
+                str(pptx_path),
+            ],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except FileNotFoundError as e:
+        raise RuntimeError("LibreOffice (soffice) is not installed on the server.") from e
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"PPTX conversion failed: {e.stderr.decode('utf-8', errors='ignore')}") from e
+
+    pdf_path = output_dir / f"{pptx_path.stem}.pdf"
+    if not pdf_path.exists():
+        raise RuntimeError("PPTX conversion failed: PDF output not found.")
+    return pdf_path
 
 # Rate limiting storage: {ip_address: [timestamp1, timestamp2, ...]}
 rate_limit_storage: Dict[str, list] = {}
@@ -286,22 +316,12 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
     content = await file.read()
     await asyncio.to_thread(lambda: temp_file.write_bytes(content))
 
-    # Check slide count BEFORE processing (reject early)
-    import fitz
-    slide_count = await asyncio.to_thread(lambda: len(fitz.open(str(temp_file))))
-    if slide_count > 100:
-        # Clean up temp file
-        await asyncio.to_thread(temp_file.unlink, missing_ok=True)
-        raise HTTPException(
-            status_code=400,
-            detail=f"Presentation has {slide_count} slides. Maximum allowed is 100 slides."
-        )
-
-    # Initialize session
+    # Initialize session early (for conversion/status updates)
     sessions[session_id] = {
         "id": session_id,
         "filename": file.filename,
         "temp_file": str(temp_file),
+        "original_file": str(temp_file),
         "enable_vision": enable_vision,
         "tts_provider": tts_provider,
         "client_ip": client_ip,
@@ -316,6 +336,32 @@ async def upload_file(request: Request, file: UploadFile = File(...), enable_vis
 
     # Save initial session to disk
     await asyncio.to_thread(save_session, session_id)
+
+    # Convert PPTX to PDF (auto)
+    if file.filename.endswith(".pptx"):
+        sessions[session_id]["status"] = {
+            "phase": "converting",
+            "progress": 5,
+            "message": "Converting PPTX to PDF...",
+            "complete": False
+        }
+        await asyncio.to_thread(save_session, session_id)
+        try:
+            temp_file = await asyncio.to_thread(convert_pptx_to_pdf, temp_file)
+            sessions[session_id]["temp_file"] = str(temp_file)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    # Check slide count BEFORE processing (reject early)
+    import fitz
+    slide_count = await asyncio.to_thread(lambda: len(fitz.open(str(temp_file))))
+    if slide_count > 100:
+        # Clean up temp file
+        await asyncio.to_thread(temp_file.unlink, missing_ok=True)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Presentation has {slide_count} slides. Maximum allowed is 100 slides."
+        )
 
     # Register active session for concurrency control
     register_active_session(client_ip, session_id)
@@ -944,11 +990,11 @@ async def get_uploaded_file(session_id: str):
     if session_id not in sessions:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    temp_file = sessions[session_id].get("temp_file")
-    if not temp_file:
+    original_file = sessions[session_id].get("original_file")
+    if not original_file:
         raise HTTPException(status_code=404, detail="File not found")
 
-    file_path = Path(temp_file)
+    file_path = Path(original_file)
     if not await asyncio.to_thread(file_path.exists):
         raise HTTPException(status_code=404, detail="File not found")
 
